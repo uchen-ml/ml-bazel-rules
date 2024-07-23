@@ -5,7 +5,7 @@
 
 int main() {
   uchen::tools::tokens::TokenStore store;
-  for (const auto& token : uchen::tools::tokens::Tokenize(store, "Hello")) {
-    std::cout << token.string() << "\n";
+  for (const auto& token : store.Tokenize("Hello")) {
+    std::cout << token.name() << "\n";
   }
 }

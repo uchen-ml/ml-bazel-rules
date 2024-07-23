@@ -3,8 +3,11 @@
 #define __TOOLS_TOKENS_H
 
 #include <compare>
+#include <map>
+#include <optional>
 #include <ostream>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -13,65 +16,37 @@
 
 namespace uchen::tools::tokens {
 
-class TokenStore;
-
 class Token {
  public:
-  explicit Token(const TokenStore* store, int id) : store_(store), id_(id) {}
+  Token(std::string_view name, bool is_special)
+      : name_(name), is_special_(is_special) {}
 
-  std::string string() const;
-
-  std::strong_ordering operator<=>(const Token& token) const {
-    return id_ <=> token.id_;
-  }
-
-  std::strong_ordering operator<=>(const char* sv) const;
-  bool operator==(const auto& other) const { return (*this <=> other) == 0; }
+  std::string name() const { return name_; }
+  bool is_special() const { return is_special_; }
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const Token& token) {
-    absl::Format(&sink, "%s", token.string());
+    absl::Format(&sink, "%s", token.name_);
   }
 
  private:
-  const TokenStore* store_;
-  int id_;
+  std::string name_;
+  bool is_special_;
 };
+
+std::strong_ordering operator<=>(const Token& token, std::string_view s);
+bool operator==(const Token& token, std::string_view s);
 
 class TokenStore {
  public:
-  struct SpecialTokens {
-    Token unknown;
-    Token input_start;
-    Token input_end;
-    Token upper_case;
-    Token identifier_start;
-    Token identifier_end;
-  };
-
-  TokenStore();
-  Token FromString(std::string_view string) const;
-  const SpecialTokens& special_tokens() const { return special_tokens_; }
-  std::string token_name(int code) const {
-    DCHECK_LE(code, token_names_.size());
-    return token_names_[code - 1];
-  }
-  Token GetToken(char c) const;
+  std::vector<Token> Tokenize(std::string_view input) const;
 
  private:
-  int first_char_;
-  SpecialTokens special_tokens_ = {.unknown = Token(this, 1),
-                                   .input_start = Token(this, 2),
-                                   .input_end = Token(this, 3),
-                                   .upper_case = Token(this, 4),
-                                   .identifier_start = Token(this, 5),
-                                   .identifier_end = Token(this, 6)};
-  std::vector<std::string> token_names_ = {"<unknown>", "<si>", "<ei>",
-                                           "<uc>",      "<sw>", "<ew>"};
+  bool isIdentifierChar(char c) const { return std::isalnum(c) || c == '_'; }
+
+  std::unordered_set<std::string> tokens_;
 };
 
-std::vector<Token> Tokenize(const TokenStore& token_store,
-                            std::string_view string);
 }  // namespace uchen::tools::tokens
 
 namespace std {

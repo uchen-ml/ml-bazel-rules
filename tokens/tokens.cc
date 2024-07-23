@@ -11,67 +11,64 @@
 
 namespace uchen::tools::tokens {
 
-std::vector<Token> Tokenize(const TokenStore& token_store,
-                            std::string_view string) {
-  std::vector<Token> result;
-  result.emplace_back(token_store.special_tokens().input_start);
-  bool is_word = false;
-  for (char c : string) {
-    if (std::isalnum(c)) {
-      if (!is_word) {
-        result.emplace_back(token_store.special_tokens().identifier_start);
-        is_word = true;
-      }
-    } else if (is_word) {
-      result.emplace_back(token_store.special_tokens().identifier_end);
-      is_word = false;
-    }
-    if (std::isupper(c)) {
-      result.emplace_back(token_store.special_tokens().upper_case);
-    }
-    result.emplace_back(token_store.GetToken(std::tolower(c)));
+// Token class impl
+std::strong_ordering operator<=>(const Token& token, std::string_view s) {
+  if (token.name() < s) {
+    return std::strong_ordering::less;
+  } else if (token.name() > s) {
+    return std::strong_ordering::greater;
+  } else {
+    return std::strong_ordering::equivalent;
   }
-  if (is_word) {
-    result.emplace_back(token_store.special_tokens().identifier_end);
-  }
-  result.emplace_back(token_store.special_tokens().input_end);
-  return result;
 }
 
-// Token class impl
-std::string Token::string() const { return store_->token_name(id_); }
-
-std::strong_ordering Token::operator<=>(const char* sv) const {
-  return *this <=> store_->FromString(sv);
+bool operator==(const Token& token, std::string_view s) {
+  return (token <=> s) == std::strong_ordering::equivalent;
 }
 
 // TokenStore class impl
-TokenStore::TokenStore() {
-  first_char_ = token_names_.size();
-  for (int i = 0; i < 127; ++i) {
-    token_names_.emplace_back(1, static_cast<char>(i));
-  }
-}
-
-Token TokenStore::GetToken(char c) const {
-  if (c + first_char_ >= token_names_.size()) {
-    return special_tokens_.unknown;
-  } else {
-    return Token(this, first_char_ + c + 1);
-  }
-}
-
-Token TokenStore::FromString(std::string_view sv) const {
-  if (sv.length() == 1) {
-    return GetToken(sv[0]);
-  } else {
-    for (int i = 0; i < first_char_; ++i) {
-      if (sv == token_names_[i]) {
-        return Token(this, i + 1);
+std::vector<Token> TokenStore::Tokenize(std::string_view input) const {
+  std::vector<Token> tokens{{"<si>", true}};
+  bool is_word = false;
+  std::optional<Token> current;
+  for (char c : input) {
+    if (current != std::nullopt) {
+      std::string candidate =
+          absl::StrCat(current->name(), std::string_view(&c, 1));
+      if (tokens_.contains(candidate)) {
+        current = Token(candidate, false);
+        continue;
+      } else {
+        tokens.emplace_back(std::move(*current));
       }
     }
+    if (isIdentifierChar(c)) {
+      if (!is_word) {
+        tokens.emplace_back("<sw>", true);
+        is_word = true;
+      }
+      char ch = c;
+      if (std::isupper(ch)) {
+        tokens.emplace_back("<uc>", true);
+        ch = std::tolower(c);
+      }
+      current.emplace(std::string_view(&ch, 1), false);
+    } else {
+      if (is_word) {
+        tokens.emplace_back("<ew>", true);
+        is_word = false;
+      }
+      current.emplace(std::string_view(&c, 1), false);
+    }
   }
-  return special_tokens_.unknown;
+  if (current.has_value()) {
+    tokens.emplace_back(std::move(*current));
+  }
+  if (is_word) {
+    tokens.emplace_back("<ew>", true);
+  }
+  tokens.emplace_back("<ei>", true);
+  return tokens;
 }
 
 }  // namespace uchen::tools::tokens

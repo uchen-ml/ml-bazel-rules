@@ -10,8 +10,14 @@ cc_binary(
 
 cc_library(
     name = "lib",
-    srcs = ["tokens.cc"],
-    hdrs = ["tokens.h"],
+    srcs = [
+        "bagger.cc",
+        "tokens.cc",
+    ],
+    hdrs = [
+        "bagger.h",
+        "tokens.h",
+    ],
     deps = [
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
