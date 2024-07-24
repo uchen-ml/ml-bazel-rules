@@ -3,9 +3,12 @@
 #define __TOOLS_TOKENS_H
 
 #include <compare>
+#include <initializer_list>
 #include <map>
 #include <optional>
 #include <ostream>
+#include <span>
+#include <string>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
@@ -39,10 +42,18 @@ bool operator==(const Token& token, std::string_view s);
 
 class TokenStore {
  public:
+  TokenStore() = default;
+  TokenStore(std::initializer_list<const std::string_view> initial);
   std::vector<Token> Tokenize(std::string_view input) const;
+  void Update(const auto& tokens) {
+    for (std::string_view token : tokens) {
+      Add(token);
+    }
+  }
 
  private:
   bool isIdentifierChar(char c) const { return std::isalnum(c) || c == '_'; }
+  void Add(absl::string_view sv);
 
   std::unordered_set<std::string> tokens_;
 };

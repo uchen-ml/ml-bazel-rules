@@ -42,6 +42,13 @@ TEST(TokensTest, EmptyInput) {
   EXPECT_THAT(store.Tokenize(""), ::testing::ElementsAre("<si>", "<ei>"));
 }
 
+TEST(TokensTest, UsesLongToken) {
+  TokenStore store({"abc"});
+  EXPECT_THAT(store.Tokenize("deabcde"),
+              ::testing::ElementsAre("<si>", "<sw>", "d", "e", "abc", "d", "e",
+                                     "<ew>", "<ei>"));
+}
+
 }  // namespace
 }  // namespace uchen::tools::tokens
 

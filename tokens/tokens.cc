@@ -1,6 +1,7 @@
 #include "tokens/tokens.h"
 
 #include <cctype>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -27,6 +28,18 @@ bool operator==(const Token& token, std::string_view s) {
 }
 
 // TokenStore class impl
+TokenStore::TokenStore(std::initializer_list<const std::string_view> tokens) {
+  for (std::string_view token : tokens) {
+    Add(token);
+  }
+}
+
+void TokenStore::Add(std::string_view token) {
+  for (size_t i = 0; i < token.size(); i++) {
+    tokens_.emplace(token.substr(0, i + 1));
+  }
+}
+
 std::vector<Token> TokenStore::Tokenize(std::string_view input) const {
   std::vector<Token> tokens{{"<si>", true}};
   bool is_word = false;
