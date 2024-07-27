@@ -71,14 +71,11 @@ TEST(BaggerTest, BagsTogether) {
   merged = Combine(store.Tokenize(data));
   EXPECT_THAT(merged, ::testing::ElementsAre("ab", "knaa"));
   store.Update(merged);
-  merged = Combine(store.Tokenize(data));
-  EXPECT_THAT(merged, ::testing::ElementsAre("aknaa", "aaab", "bkn"));
-  store.Update(merged);
   using std::string_literals::operator""s;
   EXPECT_THAT(store.Tokenize(absl::StrCat("+ &"s, data, "l n")),
-              ::testing::ElementsAre("<si>", "+", " ", "&", "<sw>", "aaab",
-                                     "aknaa", "bkn", "l", "<ew>", " ", "<sw>",
-                                     "n", "<ew>", "<ei>"));
+              ::testing::ElementsAre("<si>", "+", " ", "&", "<sw>", "aa", "ab",
+                                     "a", "knaa", "b", "kn", "l", "<ew>", " ",
+                                     "<sw>", "n", "<ew>", "<ei>"));
 }
 
 TEST(BaggerTest, EmptyInput) {

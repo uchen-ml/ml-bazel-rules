@@ -1,11 +1,9 @@
 #include <iostream>
+#include <span>
 
-#include "tokens.h"
-#include "tokens/tokens.h"
+#include "absl/strings/str_join.h"
 
-int main() {
-  uchen::tools::tokens::TokenStore store;
-  for (const auto& token : store.Tokenize("Hello")) {
-    std::cout << token.name() << "\n";
-  }
+int main(int argc, char* argv[]) {
+  std::span<char*> args(argv, argc);
+  std::cout << absl::StrJoin(args, " ") << "\n";
 }

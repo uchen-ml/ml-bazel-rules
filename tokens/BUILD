@@ -5,7 +5,14 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = "tokens",
     srcs = ["main.cc"],
-    deps = [":lib"],
+    # deps = [":lib"],
+    copts = ["-std=c++20"],
+    deps = [
+        # "@abseil-cpp//absl/log",
+        # "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/strings",
+        # "@abseil-cpp//absl/strings:str_format",
+    ],
 )
 
 cc_library(
@@ -24,4 +31,5 @@ cc_library(
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:str_format",
     ],
+    copts = ["-std=c++20"],
 )
