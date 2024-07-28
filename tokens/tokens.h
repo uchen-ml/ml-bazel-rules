@@ -45,6 +45,11 @@ class TokenStore {
  public:
   TokenStore() = default;
   TokenStore(std::initializer_list<const std::string_view> initial);
+  explicit TokenStore(std::span<const std::string> initial) {
+    for (auto token : initial) {
+      Add(token);
+    }
+  }
   std::vector<Token> Tokenize(const char* input) const {
     // Mostly used in tests, drops the terminating 0
     return Tokenize(std::span<const char>(input, std::strlen(input)));

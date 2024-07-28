@@ -47,8 +47,9 @@ std::vector<std::vector<char>> ReadFiles(std::span<char*> paths) {
   return files_to_process;
 }
 
-std::map<std::string, size_t> IdentifyTokens(std::span<const char> data) {
-  uchen::tools::tokens::TokenStore store;
+std::map<std::string, size_t> IdentifyTokens(std::span<std::string> ts,
+                                             std::span<const char> data) {
+  uchen::tools::tokens::TokenStore store(ts);
   for (int i = 0; i < 20; ++i) {
     auto tokens = store.Tokenize(data);
     std::vector<std::string> combined;
@@ -83,10 +84,40 @@ int main(int argc, char* argv[], char** env) {
     return 1;
   }
   VLOG(1) << absl::StrJoin(SortEnv(env), "\n");
-
+  std::map<std::string, size_t> prev;
+  std::vector<std::string> init;
   for (const auto& data : ReadFiles(std::span(remaining).subspan(1))) {
-    for (const auto& [token, count] : IdentifyTokens(data)) {
-      LOG(INFO) << token << " " << count;
+    for (size_t i = 0; i < 3; ++i) {
+      init.clear();
+      for (const auto& [token, count] : prev) {
+        if (count >= 6) {
+          init.emplace_back(token);
+        }
+      }
+      auto cur = IdentifyTokens(init, data);
+      for (const auto& [token, count] : cur) {
+        std::string prefix = "     ";
+        auto it = prev.find(token);
+        if (it == prev.end()) {
+          prefix = absl::StrCat("+", count);
+        } else {
+          if (it->second != count) {
+            prefix = absl::StrCat(
+                count > it->second ? "+" : "",
+                static_cast<long>(count) - static_cast<long>(it->second), " ",
+                count);
+          } else {
+            prefix = absl::StrCat(count);
+          }
+          prev.erase(it);
+        }
+        LOG(INFO) << token << " " << prefix;
+      }
+      for (const auto& [token, count] : prev) {
+        LOG(INFO) << token << " " << -static_cast<long>(count);
+      }
+      prev = std::move(cur);
+      LOG(INFO) << "----";
     }
   }
 }
