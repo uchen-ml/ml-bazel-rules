@@ -1,21 +1,12 @@
 #include "tokens/tokens.h"
 
 #include <cctype>
-#include <compare>
-#include <optional>
-#include <ostream>
-#include <string>
-#include <string_view>
-#include <unordered_set>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 #include "gmock/gmock.h"
 
@@ -47,6 +38,20 @@ TEST(TokensTest, UsesLongToken) {
   EXPECT_THAT(store.Tokenize("deabcde"),
               ::testing::ElementsAre("<si>", "<sw>", "d", "e", "abc", "d", "e",
                                      "<ew>", "<ei>"));
+}
+
+TEST(TokensTest, NewLinesAreSpecial) {
+  TokenStore store;
+  EXPECT_THAT(store.Tokenize("h\r\nw"),
+              ::testing::ElementsAre("<si>", "<sw>", "h", "<ew>", "<nl>",
+                                     "<nl>", "<sw>", "w", "<ew>", "<ei>"));
+}
+
+TEST(TokensTest, Brackets) {
+  TokenStore store;
+  EXPECT_THAT(store.Tokenize("[({})]"),
+              ::testing::ElementsAre("<si>", "<[>", "<(>", "<{>", "<}>", "<)>",
+                                     "<]>", "<ei>"));
 }
 
 }  // namespace

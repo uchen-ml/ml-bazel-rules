@@ -8,10 +8,13 @@ cc_binary(
     # deps = [":lib"],
     copts = ["-std=c++20"],
     deps = [
-        # "@abseil-cpp//absl/log",
-        # "@abseil-cpp//absl/log:check",
+        ":lib",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:flags",
+        "@abseil-cpp//absl/log:initialize",
         "@abseil-cpp//absl/strings",
-        # "@abseil-cpp//absl/strings:str_format",
     ],
 )
 
@@ -25,11 +28,11 @@ cc_library(
         "bagger.h",
         "tokens.h",
     ],
+    copts = ["-std=c++20"],
     deps = [
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:str_format",
     ],
-    copts = ["-std=c++20"],
 )
