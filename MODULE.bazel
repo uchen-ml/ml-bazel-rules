@@ -15,7 +15,7 @@ bazel_dep(name = "google_benchmark", version = "1.8.3")
 git_override(
     module_name = "google_benchmark",
     remote = "https://github.com/google/benchmark.git",
-    commit = "38df9daf489f7e359bbe6709099f0102398261d6",
+    commit = "378fe693a1ef51500db21b11ff05a8018c5f0e55",
 )
 
 # Dev dependencies
