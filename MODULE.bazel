@@ -8,7 +8,7 @@ bazel_dep(name = "googletest", version = "1.14.0")
 git_override(
     module_name = "googletest",
     remote = "https://github.com/google/googletest.git",
-    commit = "5bcb2d78a16edd7110e72ef694d229815aa29542",
+    commit = "ff233bdd4cac0a0bf6e5cd45bda3406814cb2796",
 )
 
 bazel_dep(name = "google_benchmark", version = "1.8.3")
