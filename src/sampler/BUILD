@@ -9,8 +9,8 @@ cc_binary(
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:flags",
         "@abseil-cpp//absl/log:initialize",
-        "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
     ],
 )
 
@@ -18,6 +18,10 @@ cc_library(
     name = "sampler_lib",
     srcs = ["path_matcher.cc"],
     hdrs = ["path_matcher.h"],
-    visibility = ["//visibility:public"],
     strip_include_prefix = "//src",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@abseil-cpp//absl/algorithm:container",
+        "@abseil-cpp//absl/strings",
+    ],
 )
