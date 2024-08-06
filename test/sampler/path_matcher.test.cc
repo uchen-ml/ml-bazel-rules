@@ -1,11 +1,13 @@
 #include "sampler/path_matcher.h"
 
 #include <array>
+#include <filesystem>
 
 #include <gtest/gtest.h>
 
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
+#include "absl/log/log.h"
 
 #include "src/sampler/path_matcher.h"
 
@@ -35,7 +37,29 @@ TEST(Matcher, MatchesExcludes) {
   EXPECT_TRUE(matcher("nomatch/a.a"));
 }
 
-TEST(Matcher, MatchesIncludesExcludes) {}
+TEST(Matcher, FileSize) {
+  auto matcher = uchen::data::PathMatcherBuilder().set_min_size(15).build();
+  EXPECT_FALSE(matcher("test/sampler/data/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_FALSE(matcher(""));
+  matcher = uchen::data::PathMatcherBuilder()
+                .set_min_size(15)
+                .set_max_size(25)
+                .build();
+  EXPECT_FALSE(matcher("test/sampler/data/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_FALSE(matcher(""));
+  matcher = uchen::data::PathMatcherBuilder().set_max_size(25).build();
+  EXPECT_TRUE(matcher("test/sampler/data/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_FALSE(matcher(""));
+}
 
 TEST(Matcher, MatchesExtension) {
   using std::string_literals::operator""s;
@@ -65,6 +89,7 @@ TEST(Matcher, AllFilters) {
   EXPECT_FALSE(matcher("exclude/a.a"));
   EXPECT_FALSE(matcher("include/exclude/a.b"));
   EXPECT_FALSE(matcher(""));
+  FAIL() << "Check sizes too!";
 }
 
 TEST(Matcher, NoFilters) {

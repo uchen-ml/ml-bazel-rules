@@ -4,6 +4,7 @@ cc_test(
     name = "path_matcher_test",
     size = "small",
     srcs = ["path_matcher.test.cc"],
+    data = ["data"],
     deps = [
         "//src/sampler:sampler_lib",
         "@abseil-cpp//absl/log",
@@ -11,4 +12,3 @@ cc_test(
         "@googletest//:gtest",
     ],
 )
-
