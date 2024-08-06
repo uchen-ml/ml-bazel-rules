@@ -1,7 +1,6 @@
 #include "sampler/path_matcher.h"
 
 #include <array>
-#include <string>
 
 #include <gtest/gtest.h>
 
@@ -13,27 +12,27 @@
 namespace {
 
 TEST(Matcher, MatchesIncludes) {
-  auto matcher =
-      uchen::data::PathMatcherBuilder()
-          .including(std::array<std::string, 2>({"matches1", "matches2"}))
-          .build();
+  using std::string_literals::operator""s;
+  auto matcher = uchen::data::PathMatcherBuilder()
+                     .including(std::array{"matches1"s, "mat/ches2"s})
+                     .build();
   EXPECT_TRUE(matcher("matches1/f.a"));
-  EXPECT_TRUE(matcher("matches2/f.a"));
+  EXPECT_TRUE(matcher("mat/ches2/f.a"));
   EXPECT_FALSE(matcher("matches1_not/f.a"));
   EXPECT_FALSE(matcher("nomatch/a.a"));
   EXPECT_FALSE(matcher(""));
 }
 
 TEST(Matcher, MatchesExcludes) {
-  auto matcher =
-      uchen::data::PathMatcherBuilder()
-          .excluding(std::array<std::string, 2>({"matches1", "matches2"}))
-          .build();
-  EXPECT_TRUE(matcher("matches1/f.a"));
-  EXPECT_TRUE(matcher("matches2/f.a"));
-  EXPECT_FALSE(matcher("matches1_not/f.a"));
-  EXPECT_FALSE(matcher("nomatch/a.a"));
+  using std::string_literals::operator""s;
+  auto matcher = uchen::data::PathMatcherBuilder()
+                     .excluding(std::array{"matches1"s, "mat/ches2"s})
+                     .build();
+  EXPECT_FALSE(matcher("matches1/f.a"));
+  EXPECT_FALSE(matcher("mat/ches2/f.a"));
   EXPECT_FALSE(matcher(""));
+  EXPECT_TRUE(matcher("matches1_not/f.a"));
+  EXPECT_TRUE(matcher("nomatch/a.a"));
 }
 
 TEST(Matcher, MatchesIncludesExcludes) {}
@@ -53,11 +52,25 @@ TEST(Matcher, MatchesExtension) {
   EXPECT_FALSE(matcher(""));
 }
 
-TEST(Matcher, DISABLED_AllFilters) {}
+TEST(Matcher, AllFilters) {
+  using std::string_literals::operator""s;
+  auto matcher = uchen::data::PathMatcherBuilder()
+                     .including(std::array{"include"s})
+                     .excluding(std::array{"include/exclude"s})
+                     .only_extensions(std::array{"a"s})
+                     .build();
+  EXPECT_TRUE(matcher("include/a.a"));
+  EXPECT_FALSE(matcher("include/a.b"));
+  EXPECT_FALSE(matcher("include/exclude/a.a"));
+  EXPECT_FALSE(matcher("exclude/a.a"));
+  EXPECT_FALSE(matcher("include/exclude/a.b"));
+  EXPECT_FALSE(matcher(""));
+}
 
-TEST(Matcher, DISABLED_NoFilters) {
-  // uchen::data::PathMatcher matcher(std::array<std::string, 0>{},
-  // std::array<std::string, 0>{});
+TEST(Matcher, NoFilters) {
+  auto matcher = uchen::data::PathMatcherBuilder().build();
+  EXPECT_TRUE(matcher("boop"));
+  EXPECT_FALSE(matcher(""));
 }
 
 }  // namespace

@@ -1,6 +1,6 @@
 #include "src/sampler/path_matcher.h"
 
-#include <algorithm>
+#include <cstdlib>
 #include <iterator>
 #include <string>
 #include <string_view>
@@ -25,19 +25,29 @@ bool PathMatcher::operator()(std::string_view path) {
   if (path.length() == 0) {
     return false;
   }
-  if (!includes_.empty() && std::none_of(includes_.begin(), includes_.end(),
-                                         [&](std::string_view prefix) -> bool {
-                                           return path.starts_with(prefix);
-                                         })) {
+  bool result = includes_.empty();
+  for (const auto& prefix : includes_) {
+    if (path.starts_with(prefix)) {
+      result = true;
+      break;
+    }
+  }
+  if (!result) {
     return false;
   }
-  if (!exts_.empty() && std::none_of(exts_.begin(), exts_.end(),
-                                     [&](std::string_view ext) -> bool {
-                                       return path.ends_with(ext);
-                                     })) {
-    return false;
+  for (const auto& prefix : excludes_) {
+    if (path.starts_with(prefix)) {
+      return false;
+    }
   }
-  return true;
+  result = exts_.empty();
+  for (const auto& suffix : exts_) {
+    if (path.ends_with(suffix)) {
+      result = true;
+      break;
+    }
+  }
+  return result;
 }
 
 //
