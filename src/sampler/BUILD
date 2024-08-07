@@ -5,6 +5,7 @@ cc_binary(
     srcs = ["main.cc"],
     visibility = ["//visibility:public"],
     deps = [
+        ":sampler_lib",
         "@abseil-cpp//absl/flags:parse",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:flags",
@@ -18,7 +19,6 @@ cc_library(
     name = "sampler_lib",
     srcs = ["path_matcher.cc"],
     hdrs = ["path_matcher.h"],
-    strip_include_prefix = "//src",
     visibility = ["//visibility:public"],
     deps = [
         "@abseil-cpp//absl/algorithm:container",
