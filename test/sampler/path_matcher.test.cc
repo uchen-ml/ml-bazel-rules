@@ -39,25 +39,25 @@ TEST(Matcher, MatchesExcludes) {
 
 TEST(Matcher, FileSize) {
   auto matcher = uchen::data::PathMatcherBuilder().set_min_size(15).build();
-  EXPECT_FALSE(matcher("test/sampler/data/10.sample"));
-  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
-  EXPECT_TRUE(matcher("test/sampler/data/30.sample"));
-  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/include/20.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/include/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/40.sample"));
   EXPECT_FALSE(matcher(""));
   matcher = uchen::data::PathMatcherBuilder()
                 .set_min_size(15)
                 .set_max_size(25)
                 .build();
-  EXPECT_FALSE(matcher("test/sampler/data/10.sample"));
-  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
-  EXPECT_FALSE(matcher("test/sampler/data/30.sample"));
-  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/include/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/40.sample"));
   EXPECT_FALSE(matcher(""));
   matcher = uchen::data::PathMatcherBuilder().set_max_size(25).build();
-  EXPECT_TRUE(matcher("test/sampler/data/10.sample"));
-  EXPECT_TRUE(matcher("test/sampler/data/20.sample"));
-  EXPECT_FALSE(matcher("test/sampler/data/30.sample"));
-  EXPECT_FALSE(matcher("test/sampler/data/40.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/include/10.sample"));
+  EXPECT_TRUE(matcher("test/sampler/data/include/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/30.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/40.sample"));
   EXPECT_FALSE(matcher(""));
 }
 
@@ -78,18 +78,20 @@ TEST(Matcher, MatchesExtension) {
 
 TEST(Matcher, AllFilters) {
   using std::string_literals::operator""s;
-  auto matcher = uchen::data::PathMatcherBuilder()
-                     .including(std::array{"include"s})
-                     .excluding(std::array{"include/exclude"s})
-                     .only_extensions(std::array{"a"s})
-                     .build();
-  EXPECT_TRUE(matcher("include/a.a"));
-  EXPECT_FALSE(matcher("include/a.b"));
-  EXPECT_FALSE(matcher("include/exclude/a.a"));
-  EXPECT_FALSE(matcher("exclude/a.a"));
-  EXPECT_FALSE(matcher("include/exclude/a.b"));
+  auto matcher =
+      uchen::data::PathMatcherBuilder()
+          .including(std::array{"test/sampler/data/include"s})
+          .excluding(std::array{"test/sampler/data/include/exclude"s})
+          .only_extensions(std::array{"sample"s})
+          .set_min_size(15)
+          .set_max_size(25)
+          .build();
+  EXPECT_TRUE(matcher("test/sampler/data/include/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/doesnotexist.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/exclude/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/exclude/20.sample"));
+  EXPECT_FALSE(matcher("test/sampler/data/include/exclude/a.b"));
   EXPECT_FALSE(matcher(""));
-  FAIL() << "Check sizes too!";
 }
 
 TEST(Matcher, NoFilters) {
