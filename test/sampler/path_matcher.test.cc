@@ -1,13 +1,11 @@
 #include "sampler/path_matcher.h"
 
 #include <array>
-#include <filesystem>
 
 #include <gtest/gtest.h>
 
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
-#include "absl/log/log.h"
 
 #include "src/sampler/path_matcher.h"
 
