@@ -1,14 +1,10 @@
-#include "tokens/tokens.h"
+#include "src/bow/tokens.h"
 
 #include <cctype>
 #include <initializer_list>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_join.h"
 
 namespace uchen::tools::tokens {
 

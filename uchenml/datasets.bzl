@@ -1,9 +1,7 @@
-"""Common definitions for UchenML rules for training data management."""
+"""Data set management rules."""
 
-# TODO: Git, sample
-
-load("archives.bzl", "http_download_impl", "unpack_impl")
-load("sample.bzl", "sample_impl")
+load("dataset/archives.bzl", "http_download_impl", "unpack_impl")
+load("dataset/sample.bzl", "sample_impl")
 
 http_download = rule(
     implementation = http_download_impl,

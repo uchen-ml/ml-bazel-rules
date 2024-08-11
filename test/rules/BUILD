@@ -1,4 +1,5 @@
-load("//uchenml:defs.bzl", "web_archive_dataset")
+load("//uchenml:bow.bzl", "bag_of_words")
+load("//uchenml:datasets.bzl", "web_archive_dataset")
 
 web_archive_dataset(
     name = "grpc_cpp",
@@ -20,4 +21,10 @@ web_archive_dataset(
     samples = 20,
     seed = 10,
     strip_prefix_segments = 1,
+)
+
+bag_of_words(
+    name = "code_art_bow",
+    srcs = [":grpc_cpp"],
+    vocab_size = 1000,
 )
