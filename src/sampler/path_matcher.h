@@ -36,7 +36,6 @@ class PathMatcherBuilder {
     return PathMatcher(excludes_, exts_, min_size_, max_size_);
   }
 
-  PathMatcherBuilder including(std::span<const std::string> includes) const;
   PathMatcherBuilder excluding(std::span<const std::string> excludes) const;
   PathMatcherBuilder only_extensions(
       std::span<const std::string> includes) const;
