@@ -12,13 +12,6 @@ git_override(
     commit = "ff233bdd4cac0a0bf6e5cd45bda3406814cb2796",
 )
 
-bazel_dep(name = "google_benchmark", version = "1.8.3")
-git_override(
-    module_name = "google_benchmark",
-    remote = "https://github.com/google/benchmark.git",
-    commit = "b884717437fc468929cd47ca6a374005357ff18e",
-)
-
 # Dev dependencies
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
