@@ -18,6 +18,7 @@ cc_library(
         "bagger.h",
         "tokens.h",
     ],
+    strip_include_prefix = "//src",
     deps = [
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
