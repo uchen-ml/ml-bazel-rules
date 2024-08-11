@@ -9,7 +9,6 @@ http_download = rule(
     implementation = http_download_impl,
     attrs = {
         "md5": attr.string(mandatory = False),
-        "output": attr.output(mandatory = False),
         "url": attr.string(mandatory = True),
         "_check_and_copy": attr.label(
             cfg = "exec",
@@ -22,14 +21,19 @@ http_download = rule(
 sample = rule(
     implementation = sample_impl,
     attrs = {
-        "dataset": attr.label(allow_files = True, mandatory = True),
+        "src": attr.label(allow_files = True, mandatory = True),
+        "include": attr.string_list(),
+        "exclude": attr.string_list(),
+        "extensions": attr.string_list(),
+        "min_size": attr.int(),
+        "max_size": attr.int(),
+        "samples": attr.int(),
+        "seed": attr.int(default = 42),
         "_sampler_bin": attr.label(
             default = Label("//src/sampler:sampler"),
             executable = True,
             cfg = "exec",
         ),
-        "include_dirs": attr.string_list(),
-        "extensions": attr.string_list(),
     },
 )
 
@@ -43,3 +47,42 @@ unpack = rule(
         "strip_prefix_segments": attr.int(doc = "Number of segments to strip from paths"),
     },
 )
+
+def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude, extensions, min_size, max_size, samples, seed = 42):
+    """
+    Downloads a web archive and unpacks it.
+
+    Args:
+        url: The URL of the archive.
+        name: The name of the target.
+        strip_prefix_segments: The number of segments to strip from paths in the archive.
+        include: A list of paths to include in the sample.
+        exclude: A list of paths to exclude from the sample.
+        extensions: A list of file extensions to include in the sample.
+        min_size: The minimum size of files to include in the sample.
+        max_size: The maximum size of files to include in the sample.
+        samples: The number of samples to take.
+        seed: The seed for the random number generator.
+        md5: The MD5 checksum of the archive.
+    """
+    http_download(
+        name = name + "_download",
+        url = url,
+        md5 = md5,
+    )
+    unpack(
+        name = name + "_unpack",
+        input = ":" + name + "_download",
+        strip_prefix_segments = strip_prefix_segments,
+    )
+    sample(
+        name = name,
+        src = name + "_unpack",
+        include = include,
+        exclude = exclude,
+        extensions = extensions,
+        min_size = min_size,
+        max_size = max_size,
+        samples = samples,
+        seed = seed,
+    )
