@@ -1,9 +1,9 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
 cc_test(
-    name = "bagger_test",
+    name = "combine_test",
     size = "small",
-    srcs = ["bagger.test.cc"],
+    srcs = ["combine.test.cc"],
     deps = [
         "//src/tokens:lib",
         "@abseil-cpp//absl/log",

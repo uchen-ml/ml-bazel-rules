@@ -3,9 +3,10 @@
 #define __TOOLS_TOKENS_H
 
 #include <compare>
+#include <cstddef>
+#include <cstring>
 #include <initializer_list>
 #include <map>
-#include <optional>
 #include <ostream>
 #include <span>
 #include <string>
@@ -13,7 +14,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -38,16 +38,26 @@ class Token {
 };
 
 std::strong_ordering operator<=>(const Token& token, std::string_view s);
+std::strong_ordering operator<=>(const Token& t1, const Token& t2);
 bool operator==(const Token& token, std::string_view s);
 
 class TokenStore {
  public:
   TokenStore() = default;
   TokenStore(std::initializer_list<const std::string_view> initial);
-  std::vector<Token> Tokenize(std::string_view input) const;
-  void Update(const auto& tokens) {
-    for (std::string_view token : tokens) {
+  explicit TokenStore(std::span<const std::string> initial) {
+    for (auto token : initial) {
       Add(token);
+    }
+  }
+  std::vector<Token> Tokenize(const char* input) const {
+    // Mostly used in tests, drops the terminating 0
+    return Tokenize(std::span<const char>(input, std::strlen(input)));
+  }
+  std::vector<Token> Tokenize(std::span<const char> input) const;
+  void Update(const std::map<std::string, size_t>& tokens) {
+    for (const auto& token : tokens) {
+      Add(token.first);
     }
   }
 
@@ -57,6 +67,9 @@ class TokenStore {
 
   std::unordered_set<std::string> tokens_;
 };
+
+std::map<std::string, size_t> Combine(std::span<const Token> tokens,
+                                      size_t min_matches = 1);
 
 }  // namespace uchen::tools::tokens
 
