@@ -18,13 +18,13 @@ web_archive_dataset(
     ],
     min_size = 3000,
     max_size = 5000,
-    samples = 20,
+    samples = 3,
     seed = 10,
     strip_prefix_segments = 1,
 )
 
 bag_of_words(
-    name = "code_art_bow",
+    name = "codeart_bow",
     srcs = [":grpc_cpp"],
     vocab_size = 1000,
 )

@@ -4,6 +4,8 @@
 #include <compare>
 #include <cstddef>
 #include <initializer_list>
+#include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>

@@ -5,7 +5,7 @@ cc_test(
     size = "small",
     srcs = ["combine.test.cc"],
     deps = [
-        "//src/tokens:lib",
+        "//src/bow:bowlib",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:initialize",
         "@googletest//:gtest_main",
@@ -17,7 +17,7 @@ cc_test(
     size = "small",
     srcs = ["tokens.test.cc"],
     deps = [
-        "//src/tokens:lib",
+        "//src/bow:bowlib",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:initialize",
         "@googletest//:gtest_main",

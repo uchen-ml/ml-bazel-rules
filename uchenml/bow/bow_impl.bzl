@@ -1,5 +1,7 @@
 """ Bag of words rule implementation """
 
+load("//uchenml:providers.bzl", "DatasetInfo")
+
 def bag_of_words_impl(ctx):
     """
     Bag of words rule implementation
@@ -10,9 +12,14 @@ def bag_of_words_impl(ctx):
     Returns:
       DefaultInfo
     """
+    manifests = []
+    for target in ctx.attr.srcs:
+        if not DatasetInfo in target:
+            fail("The dataset must have a directory")
+        manifests.append(target[DatasetInfo].manifest)
     output = ctx.actions.declare_file(ctx.attr.name + ".bow")
     args = ctx.actions.args()
-    args.add_joined("--inputlists", ctx.files.srcs, join_with = ",", uniquify = True)
+    args.add_joined("--inputlists", manifests, join_with = ",", uniquify = True)
     args.add("--output", output)
     args.add("--stderrthreshold=0")
     ctx.actions.run(

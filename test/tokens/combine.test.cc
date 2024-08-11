@@ -8,8 +8,7 @@
 #include "absl/log/initialize.h"
 
 #include "gmock/gmock.h"
-#include "tokens/bagger.h"
-#include "tokens/tokens.h"
+#include "src/bow/tokens.h"
 
 namespace uchen::tools::tokens {
 namespace {

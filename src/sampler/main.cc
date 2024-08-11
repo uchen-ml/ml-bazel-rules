@@ -77,7 +77,8 @@ int main(int argc, char* argv[]) {
           .set_min_size(absl::GetFlag(FLAGS_min_size))
           .set_max_size(absl::GetFlag(FLAGS_max_size))
           .build();
-  std::set<std::filesystem::path> files;
+  std::set<std::string> files;
+  std::string prefix = std::filesystem::current_path().string();
   while (!includes.empty()) {
     for (const auto& entry :
          std::filesystem::directory_iterator(includes.front())) {
@@ -89,13 +90,14 @@ int main(int argc, char* argv[]) {
         includes.emplace(entry);
         continue;
       }
-      if (matcher(entry.path().string())) {
-        files.emplace(entry);
+      std::string path = entry.path().string();
+      if (matcher(path)) {
+        files.emplace(path.substr(prefix.size() + 1));
       }
     }
     includes.pop();
   }
-  std::vector<std::filesystem::path> samples(files.begin(), files.end());
+  std::vector<std::string> samples(files.begin(), files.end());
   if (absl::GetFlag(FLAGS_samples) > 0) {
     std::mt19937 gen(absl::GetFlag(FLAGS_seed));
     // It is templting to use std::sample here, but it will generate entirely
@@ -112,11 +114,11 @@ int main(int argc, char* argv[]) {
       return 1;
     }
     for (const auto& sample : samples) {
-      out << sample.string() << '\n';
+      out << sample << '\n';
     }
   } else {
     for (const auto& sample : samples) {
-      LOG(INFO) << sample.string();
+      LOG(INFO) << sample;
     }
   }
   LOG(INFO) << "Done";

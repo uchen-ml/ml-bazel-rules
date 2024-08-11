@@ -2,6 +2,7 @@
 
 load("dataset/archives.bzl", "http_download_impl", "unpack_impl")
 load("dataset/sample.bzl", "sample_impl")
+load("providers.bzl", "DatasetInfo")
 
 http_download = rule(
     implementation = http_download_impl,
@@ -33,6 +34,7 @@ sample = rule(
             cfg = "exec",
         ),
     },
+    provides = [DefaultInfo, DatasetInfo],
 )
 
 unpack = rule(
