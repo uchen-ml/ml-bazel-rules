@@ -3,7 +3,7 @@ Uchen.ML Tools - Tools to make training models easier
 '''
 module(name = "uchen-core", version = "0.1", compatibility_level = 1)
 
-bazel_dep(name = "abseil-cpp", version = "20240116.2")
+bazel_dep(name = "abseil-cpp", version = "20240722.0")
 
 bazel_dep(name = "googletest", version = "1.14.0")
 git_override(
