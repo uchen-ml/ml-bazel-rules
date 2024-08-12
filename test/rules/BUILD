@@ -7,18 +7,21 @@ web_archive_dataset(
     md5 = "b2b3ae2a46a2500b57a7f9b85d0fa161",
     include = [
         "src",
+        "test",
     ],
     exclude = [
         "src/ruby",
         "src/compiler/",
+        "src/core/ext/upb-gen",
+        "src/core/ext/upbdefs-gen"
     ],
     extensions = [
         "cc",
         "h",
     ],
-    min_size = 3000,
-    max_size = 5000,
-    samples = 3,
+    min_size = 500,
+    max_size = 2000,
+    samples = 10000,
     seed = 10,
     strip_prefix_segments = 1,
 )

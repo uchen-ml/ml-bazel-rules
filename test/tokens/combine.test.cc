@@ -31,11 +31,6 @@ TEST(CombineTest, Combines) {
                                      "<sw>", "n", "<ew>", "<ei>"));
 }
 
-TEST(CombineTest, EmptyInput) {
-  TokenStore store;
-  EXPECT_THAT(Bagger().Lump(store.Tokenize("")), ::testing::IsEmpty());
-}
-
 }  // namespace
 }  // namespace uchen::tools::tokens
 

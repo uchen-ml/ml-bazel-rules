@@ -1,8 +1,10 @@
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -16,17 +18,24 @@
 
 ABSL_FLAG(std::vector<std::string>, inputlists, {}, "List of input files");
 ABSL_FLAG(std::string, output, {}, "Output file");
+ABSL_FLAG(size_t, token_apperances, 3, "Minimum number of token apperances");
 
-int main(int argc, char* argv[]) {
-  absl::InitializeLog();
-  absl::SetProgramUsageMessage(absl::StrFormat(
-      "Usage: %s --inputlists <input_list_files> --output <output_file>",
-      argv[0]));
-  absl::ParseCommandLine(argc, argv);
-  LOG(INFO) << absl::StrJoin(std::span(argv, argc), " ");
-  LOG(INFO) << "Current working directory: " << std::filesystem::current_path();
+namespace {
+
+template <typename T>
+struct LessBySecondElement {
+  bool operator()(const std::pair<T, size_t>& v1,
+                  const std::pair<T, size_t>& v2) const {
+    if (v1.second == v2.second) {
+      return v1.first > v2.first;
+    }
+    return v1.second > v2.second;
+  }
+};
+
+std::string ReadInputBuffer(std::span<const std::string> files) {
   std::stringstream ss;
-  for (std::string_view file : absl::GetFlag(FLAGS_inputlists)) {
+  for (std::string_view file : files) {
     std::ifstream list_file(file.data());
     if (!list_file) {
       LOG(ERROR) << "Unable to open file: " << file;
@@ -42,16 +51,59 @@ int main(int argc, char* argv[]) {
       ss << input_file.rdbuf();
     }
   }
-  std::string input = ss.str();
-  ss = {};
-  LOG(INFO) << "Read " << input.size() << " bytes from input files";
+  return ss.str();
+}
+
+std::vector<uchen::tools::tokens::Token> BuildTokenStream(
+    const std::string& input, size_t apperances) {
+  uchen::tools::tokens::TokenStore store;
+  bool more = true;
+  while (more) {
+    std::map combined = uchen::tools::tokens::Combine(store.Tokenize(input));
+    for (auto it = combined.begin(); it != combined.end();) {
+      if (it->second < apperances) {
+        it = combined.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    more = store.Update(combined);
+  }
+  return store.Tokenize(input);
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+  absl::InitializeLog();
+  absl::SetProgramUsageMessage(absl::StrFormat(
+      "Usage: %s --inputlists <input_list_files> --output <output_file>",
+      argv[0]));
+  absl::ParseCommandLine(argc, argv);
+  LOG(INFO) << absl::StrJoin(std::span(argv, argc), " ");
+  // Create output file early to ensure no wasted work
+  std::ofstream output(absl::GetFlag(FLAGS_output));
+  if (!output) {
+    LOG(ERROR) << "Unable to open output file: " << absl::GetFlag(FLAGS_output);
+    return 1;
+  }
+  std::string input = ReadInputBuffer(absl::GetFlag(FLAGS_inputlists));
   if (input.empty()) {
     LOG(ERROR) << "No input data";
     return 1;
   }
-  uchen::tools::tokens::TokenStore store;
-  for (const auto& token : store.Tokenize(input)) {
-    std::cout << token.name() << "\n";
+  LOG(INFO) << "Read " << input.size() << " bytes from input files";
+  std::map<std::string, size_t> tokens;
+  for (const auto& token :
+       BuildTokenStream(input, absl::GetFlag(FLAGS_token_apperances))) {
+    if (!token.is_special() && token.name().size() > 1) {
+      tokens[token.name()] += 1;
+    }
   }
-  return 1;
+  for (const auto& [token, count] : tokens) {
+    output << token << "\t" << count << std::endl;
+  }
+  LOG(INFO) << "Wrote " << tokens.size() << " unique tokens to "
+            << absl::GetFlag(FLAGS_output);
+  return 0;
 }

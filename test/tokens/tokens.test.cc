@@ -10,7 +10,7 @@
 
 #include "gmock/gmock.h"
 
-namespace uchen::tools::tokens {
+namespace uchen::tools::tokens::testing {
 namespace {
 
 TEST(TokensTest, AddsWordStartEnd) {
@@ -54,8 +54,16 @@ TEST(TokensTest, Brackets) {
                                      "<]>", "<ei>"));
 }
 
+TEST(TokensTest, Update) {
+  TokenStore store;
+  EXPECT_TRUE(store.Update({{"abc", 1}, {"def", 2}}));
+  EXPECT_FALSE(store.Update({{"abc", 1}, {"def", 2}}));
+  EXPECT_TRUE(store.Update({{"def", 3}, {"ghi", 4}}));
+  EXPECT_FALSE(store.Update({{"def", 2}}));
+}
+
 }  // namespace
-}  // namespace uchen::tools::tokens
+}  // namespace uchen::tools::tokens::testing
 
 int main() {
   absl::InitializeLog();

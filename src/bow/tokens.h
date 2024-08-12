@@ -55,15 +55,17 @@ class TokenStore {
     return Tokenize(std::span<const char>(input, std::strlen(input)));
   }
   std::vector<Token> Tokenize(std::span<const char> input) const;
-  void Update(const std::map<std::string, size_t>& tokens) {
+  bool Update(const std::map<std::string, size_t>& tokens) {
+    bool changed = false;
     for (const auto& token : tokens) {
-      Add(token.first);
+      changed |= Add(token.first);
     }
+    return changed;
   }
 
  private:
   bool isIdentifierChar(char c) const { return std::isalnum(c) || c == '_'; }
-  void Add(absl::string_view sv);
+  bool Add(absl::string_view sv);
 
   std::unordered_set<std::string> tokens_;
 };

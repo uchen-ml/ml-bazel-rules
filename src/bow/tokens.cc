@@ -99,10 +99,13 @@ TokenStore::TokenStore(std::initializer_list<const std::string_view> tokens) {
   }
 }
 
-void TokenStore::Add(std::string_view token) {
+bool TokenStore::Add(std::string_view token) {
+  bool result = false;
   for (size_t i = 0; i < token.size(); i++) {
-    tokens_.emplace(token.substr(0, i + 1));
+    auto [it, b] = tokens_.emplace(token.substr(0, i + 1));
+    result |= b;
   }
+  return result;
 }
 
 std::vector<Token> TokenStore::Tokenize(std::span<const char> input) const {
