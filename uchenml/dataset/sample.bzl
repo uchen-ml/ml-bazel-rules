@@ -1,5 +1,7 @@
 """ Definition of the sampling rule """
 
+load("//uchenml:providers.bzl", "DatasetInfo")
+
 def sample_impl(ctx):
     """
     This function implements the sample rule.
@@ -18,9 +20,9 @@ def sample_impl(ctx):
     args.add_joined("--ext", ctx.attr.extensions, join_with = ",", uniquify = True)
     args.add("--min_size", ctx.attr.min_size)
     if ctx.attr.max_size > 0:
-      args.add("--max_size", ctx.attr.max_size)
+        args.add("--max_size", ctx.attr.max_size)
     if ctx.attr.samples > 0:
-      args.add("--samples", ctx.attr.samples)
+        args.add("--samples", ctx.attr.samples)
     args.add("--output", manifest)
     args.add("--seed", ctx.attr.seed)
     args.add(directory.path)
@@ -31,7 +33,11 @@ def sample_impl(ctx):
         arguments = [args],
         progress_message = "Sampling " + ctx.attr.name,
     )
-    return DefaultInfo(
-        files = depset([manifest]),
-        runfiles = ctx.runfiles(transitive_files = depset([directory])),
-    )
+    runfiles = ctx.runfiles(files = [manifest], transitive_files = ctx.attr.src.default_runfiles.files)
+    runfiles.merge(ctx.attr.src.default_runfiles)
+    return [DefaultInfo(
+        files = depset([manifest, directory]),
+    ), DatasetInfo(
+        manifest = manifest,
+        directory = directory,
+    )]

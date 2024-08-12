@@ -1,25 +1,16 @@
-#include "tokens/tokens.h"
+#include "src/bow/tokens.h"
 
 #include <cctype>
-#include <compare>
-#include <optional>
-#include <ostream>
-#include <string>
-#include <string_view>
-#include <unordered_set>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 
 #include "gmock/gmock.h"
 
-namespace uchen::tools::tokens {
+namespace uchen::tools::tokens::testing {
 namespace {
 
 TEST(TokensTest, AddsWordStartEnd) {
@@ -49,8 +40,30 @@ TEST(TokensTest, UsesLongToken) {
                                      "<ew>", "<ei>"));
 }
 
+TEST(TokensTest, NewLinesAreSpecial) {
+  TokenStore store;
+  EXPECT_THAT(store.Tokenize("h\r\nw"),
+              ::testing::ElementsAre("<si>", "<sw>", "h", "<ew>", "<nl>",
+                                     "<nl>", "<sw>", "w", "<ew>", "<ei>"));
+}
+
+TEST(TokensTest, Brackets) {
+  TokenStore store;
+  EXPECT_THAT(store.Tokenize("[({})]"),
+              ::testing::ElementsAre("<si>", "<[>", "<(>", "<{>", "<}>", "<)>",
+                                     "<]>", "<ei>"));
+}
+
+TEST(TokensTest, Update) {
+  TokenStore store;
+  EXPECT_TRUE(store.Update({{"abc", 1}, {"def", 2}}));
+  EXPECT_FALSE(store.Update({{"abc", 1}, {"def", 2}}));
+  EXPECT_TRUE(store.Update({{"def", 3}, {"ghi", 4}}));
+  EXPECT_FALSE(store.Update({{"def", 2}}));
+}
+
 }  // namespace
-}  // namespace uchen::tools::tokens
+}  // namespace uchen::tools::tokens::testing
 
 int main() {
   absl::InitializeLog();
