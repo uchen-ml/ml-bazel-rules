@@ -20,8 +20,8 @@ web_archive_dataset(
         "h",
     ],
     min_size = 500,
-    max_size = 2000,
-    samples = 10000,
+    max_size = 5000,
+    samples = 2000,
     seed = 10,
     strip_prefix_segments = 1,
 )

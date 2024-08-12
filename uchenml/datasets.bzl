@@ -48,7 +48,7 @@ unpack = rule(
     },
 )
 
-def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude, extensions, min_size, max_size, samples, seed = 42):
+def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude, extensions, min_size, max_size=0, samples=0, seed = 42):
     """
     Downloads a web archive and unpacks it.
 

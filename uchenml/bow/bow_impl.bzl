@@ -21,11 +21,11 @@ def bag_of_words_impl(ctx):
     args = ctx.actions.args()
     args.add_joined("--inputlists", manifests, join_with = ",", uniquify = True)
     args.add("--output", output)
-    args.add("--stderrthreshold=0")
     ctx.actions.run(
         inputs = ctx.files.srcs,
         outputs = [output],
         executable = ctx.file._bow_tool,
         arguments = [args],
+        progress_message = "Creating bag of words %s" % ctx.label.name,
     )
     return DefaultInfo(files = depset([output]))
