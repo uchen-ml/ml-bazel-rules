@@ -15,8 +15,8 @@ def bag_of_words_impl(ctx):
     manifests = []
     for target in ctx.attr.srcs:
         if not DatasetInfo in target:
-            fail("The dataset must have a directory")
-        manifests.append(target[DatasetInfo].manifest)
+            fail("Target %s is not a dataset" % target.label)
+        manifests.append(target[DatasetInfo].manifests)
     output = ctx.actions.declare_file(ctx.attr.name + ".bow")
     args = ctx.actions.args()
     args.add_joined("--inputlists", manifests, join_with = ",", uniquify = True)
