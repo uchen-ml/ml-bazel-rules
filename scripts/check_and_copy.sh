@@ -13,5 +13,5 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "MD5 checksum verification verified"
+echo "MD5 checksum verified"
 cp $1 $2

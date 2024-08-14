@@ -19,9 +19,9 @@ web_archive_dataset(
         "cc",
         "h",
     ],
-    min_size = 500,
-    max_size = 2000,
-    samples = 10000,
+    min_size = 200,
+    max_size = 50000,
+    samples = 2000,
     seed = 10,
     strip_prefix_segments = 1,
 )

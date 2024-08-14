@@ -28,6 +28,7 @@ sample = rule(
         "max_size": attr.int(),
         "samples": attr.int(),
         "seed": attr.int(default = 42),
+        "batch_size": attr.int(default = 50),
         "_sampler_bin": attr.label(
             default = Label("//src/sampler:sampler"),
             executable = True,
@@ -48,7 +49,19 @@ unpack = rule(
     },
 )
 
-def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude, extensions, min_size, max_size, samples, seed = 42):
+def web_archive_dataset(
+        name,
+        url,
+        md5,
+        strip_prefix_segments,
+        include,
+        exclude,
+        extensions,
+        min_size,
+        max_size = 0,
+        samples = 0,
+        batch_size = 50,
+        seed = 42):
     """
     Downloads a web archive and unpacks it.
 
@@ -64,6 +77,7 @@ def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude,
         samples: The number of samples to take.
         seed: The seed for the random number generator.
         md5: The MD5 checksum of the archive.
+        batch_size: The batch size for the sample.
     """
     http_download(
         name = name + "_download",
@@ -85,4 +99,5 @@ def web_archive_dataset(name, url, md5, strip_prefix_segments, include, exclude,
         max_size = max_size,
         samples = samples,
         seed = seed,
+        batch_size = batch_size,
     )

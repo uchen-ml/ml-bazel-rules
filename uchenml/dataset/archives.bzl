@@ -13,8 +13,9 @@ def http_download_impl(ctx):
     extension = ctx.attr.url.rsplit(".", 1)[-1]
     if ctx.attr.url.endswith(".tar.gz"):
         extension = "tar.gz"
-    output = ctx.actions.declare_file(ctx.attr.name + "." + extension)
-    temp = ctx.actions.declare_file(output.path + ".download")
+    file_name = ctx.attr.name + "." + extension
+    output = ctx.actions.declare_file(file_name)
+    temp = ctx.actions.declare_file(file_name + ".download")
     ctx.actions.run(
         executable = "curl",
         inputs = [],
@@ -60,10 +61,9 @@ def unpack_impl(ctx):
       The DefaultInfo object containing the output directory.
     """
     output = ctx.actions.declare_directory(ctx.attr.name)
-    inp = ctx.attr.input.files.to_list()[0]
-    input_path = inp.path
+    inp = ctx.file.input
     args = ctx.actions.args()
-    args.add_all(["-xzf", input_path])
+    args.add("-xzf", inp)
     if (ctx.attr.strip_prefix_segments > 0):
         args.add(ctx.attr.strip_prefix_segments, format = "--strip-components=%s")
     args.add_all(["-C", output.path])
@@ -72,6 +72,6 @@ def unpack_impl(ctx):
         inputs = [inp],
         outputs = [output],
         arguments = [args],
-        progress_message = "Unpacking " + input_path,
+        progress_message = "Unpacking " + inp.path,
     )
     return DefaultInfo(files = depset([output]))
