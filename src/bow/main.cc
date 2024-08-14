@@ -16,7 +16,8 @@
 
 #include "src/bow/tokens.h"
 
-ABSL_FLAG(std::vector<std::string>, inputlists, {}, "List of input files");
+ABSL_FLAG(std::vector<std::string>, inputs, {}, "List of input files");
+ABSL_FLAG(std::vector<std::string>, combine, {}, "List of files to combine");
 ABSL_FLAG(std::string, output, {}, "Output file");
 ABSL_FLAG(size_t, token_apperances, 3, "Minimum number of token apperances");
 
@@ -72,6 +73,53 @@ std::vector<uchen::tools::tokens::Token> BuildTokenStream(
   return store.Tokenize(input);
 }
 
+std::map<std::string, size_t> BuildBagOfWords(
+    const std::vector<std::string>& files, size_t apperances) {
+  std::string input = ReadInputBuffer(files);
+  LOG(INFO) << "Read " << input.size() << " bytes from input files";
+  std::map<std::string, size_t> tokens;
+  for (const auto& token : BuildTokenStream(input, apperances)) {
+    if (!token.is_special() && token.name().size() > 1) {
+      tokens[token.name()] += 1;
+    }
+  }
+  return tokens;
+}
+
+std::map<std::string, size_t> CombineBags(const std::vector<std::string>& files,
+                                          size_t apperances) {
+  std::map<std::string, size_t> tokens;
+  for (const auto& file : files) {
+    std::ifstream input_file(file);
+    if (!input_file) {
+      LOG(ERROR) << "Unable to open file: " << file;
+      continue;
+    }
+    for (std::string line; std::getline(input_file, line);) {
+      // Find last tab
+      size_t tab = line.find_last_of('\t');
+      if (tab == std::string::npos) {
+        LOG(ERROR) << "Invalid line: " << line << " in file: " << file;
+        continue;
+      }
+      std::string token = line.substr(0, tab);
+      std::string count_str = line.substr(tab + 1);
+      if (token.empty() || count_str.empty()) {
+        LOG(ERROR) << "Invalid line: " << line << " in file: " << file;
+        continue;
+      }
+      for (auto c : line.substr(tab + 1)) {
+        if (!std::isdigit(c)) {
+          LOG(ERROR) << "Invalid line: " << line << " in file: " << file;
+          continue;
+        }
+      }
+      tokens[token] += std::stoul(line.substr(tab + 1));
+    }
+  }
+  return tokens;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -87,19 +135,20 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << "Unable to open output file: " << absl::GetFlag(FLAGS_output);
     return 1;
   }
-  std::string input = ReadInputBuffer(absl::GetFlag(FLAGS_inputlists));
-  if (input.empty()) {
-    LOG(ERROR) << "No input data";
+  auto inputs = absl::GetFlag(FLAGS_inputs);
+  auto combine = absl::GetFlag(FLAGS_combine);
+  if (inputs.empty() && combine.empty()) {
+    LOG(ERROR) << "Either --inputs or --combine must be specified";
     return 1;
   }
-  LOG(INFO) << "Read " << input.size() << " bytes from input files";
-  std::map<std::string, size_t> tokens;
-  for (const auto& token :
-       BuildTokenStream(input, absl::GetFlag(FLAGS_token_apperances))) {
-    if (!token.is_special() && token.name().size() > 1) {
-      tokens[token.name()] += 1;
-    }
+  if (!inputs.empty() && !combine.empty()) {
+    LOG(ERROR) << "Only one of --inputs or --combine can be specified";
+    return 1;
   }
+  std::map<std::string, size_t> tokens =
+      inputs.empty()
+          ? CombineBags(combine, absl::GetFlag(FLAGS_token_apperances))
+          : BuildBagOfWords(inputs, absl::GetFlag(FLAGS_token_apperances));
   for (const auto& [token, count] : tokens) {
     output << token << "\t" << count << std::endl;
   }

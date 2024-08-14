@@ -37,7 +37,6 @@ def sample_impl(ctx):
         args.add("--samples", ctx.attr.samples)
     args.add_joined("--outputs", manifests, join_with = ",", uniquify = True)
     args.add("--seed", ctx.attr.seed)
-    args.add("--stderrthreshold=0")
     args.add(directory.path)
     ctx.actions.run(
         inputs = [directory],
@@ -47,7 +46,7 @@ def sample_impl(ctx):
         progress_message = "Sampling " + ctx.attr.name,
     )
     return [DefaultInfo(
-        files = depset(manifests),
+        files = depset(manifests + ctx.files.src),
     ), DatasetInfo(
         manifests = manifests,
         directory = directory,
