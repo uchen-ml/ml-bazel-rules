@@ -2,10 +2,7 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <limits>
-#include <map>
-#include <optional>
 #include <queue>
 #include <random>
 #include <set>
@@ -30,8 +27,7 @@ ABSL_FLAG(size_t, max_size, std::numeric_limits<size_t>::max(),
           "Maximum file size");
 ABSL_FLAG(int, seed, 42, "Random seed");
 ABSL_FLAG(size_t, samples, 0, "Number of samples");
-ABSL_FLAG(std::vector<std::string>, outputs, {},
-          "Output file for the list of samples");
+ABSL_FLAG(std::string, output, {}, "Output directory for samples");
 
 namespace {
 
@@ -43,19 +39,6 @@ std::queue<std::filesystem::path> GetUniqueCanonicalPaths(const S& paths) {
       result.emplace(std::filesystem::canonical(path));
     } else {
       LOG(ERROR) << path << " was not found";
-    }
-  }
-  return result;
-}
-
-std::optional<std::map<std::string, std::ofstream>> OpenOutputFiles(
-    const std::vector<std::string>& paths) {
-  std::map<std::string, std::ofstream> result;
-  for (const auto& path : paths) {
-    auto [it, added] = result.try_emplace(path, path);
-    if (it->second.fail()) {
-      LOG(ERROR) << "Failed to open " << path;
-      return std::nullopt;
     }
   }
   return result;
@@ -84,8 +67,14 @@ int main(int argc, char* argv[]) {
   for (const auto& exclude : absl::GetFlag(FLAGS_excluded)) {
     excludes.emplace_back((directory / exclude).string());
   }
-  auto output_files = OpenOutputFiles(absl::GetFlag(FLAGS_outputs));
-  if (!output_files.has_value()) {
+  std::string output = absl::GetFlag(FLAGS_output);
+  if (output.empty()) {
+    LOG(ERROR) << "Output directory is required";
+    return 1;
+  }
+  std::filesystem::path output_dir(output);
+  if (!std::filesystem::is_directory(output_dir)) {
+    LOG(ERROR) << output_dir << " is not a valid directory";
     return 1;
   }
   uchen::data::PathMatcher matcher =
@@ -122,50 +111,28 @@ int main(int argc, char* argv[]) {
     // new list when size changes, which causes more recomplutes than needed.
     std::shuffle(samples.begin(), samples.end(), gen);
     samples.resize(std::min(absl::GetFlag(FLAGS_samples), samples.size()));
-    std::sort(samples.begin(), samples.end());
   }
-  if (output_files->empty()) {
-    for (const auto& sample : samples) {
-      LOG(INFO) << sample;
-    }
-  } else {
-    size_t batch_size =
-        (samples.size() + output_files->size() - 1) / output_files->size();
-    for (auto& [_, out] : *output_files) {
-      for (size_t i = 0; i < batch_size && !samples.empty(); ++i) {
-        out << samples.back() << '\n';
-        samples.pop_back();
+  std::string prefix_str = std::to_string(samples.size());
+  for (size_t i = 0; i < prefix_str.length(); ++i) {
+    prefix_str[i] = '0';
+  }
+  size_t dirs = std::sqrt(samples.size());
+  size_t samples_per_dir = (samples.size() - 1 + dirs) / dirs;
+  for (size_t d = 0; d < dirs; ++d) {
+    auto dir = output_dir / std::to_string(d + 1);
+    std::filesystem::create_directory(dir);
+    for (size_t i = 0; i < samples_per_dir; ++i) {
+      size_t ind = d * samples_per_dir + i;
+      if (ind >= samples.size()) {
+        break;
       }
+      std::string filename = absl::StrCat(prefix_str, i + 1);
+      std::filesystem::path dst =
+          dir / (filename.substr(filename.length() - prefix_str.length()) +
+                 ".sample");
+      std::filesystem::copy_file(samples[ind], dst);
     }
   }
-
-  //   std::ofstream out(output.value());
-  //   if (!out) {
-  //     LOG(ERROR) << "Failed to open " << output.value();
-  //     return 1;
-  //   }
-  //   for (const auto& sample : samples) {
-  //     out << sample << '\n';
-  //   }
-  // } else if (out_directory.has_value()) {
-  //   size_t batch_size = absl::GetFlag(FLAGS_batch_size);
-  //   size_t batches = (samples.size() + batch_size / 2) / batch_size;
-  //   std::filesystem::path dir(*out_directory);
-  //   LOG(INFO) << "Writing " << samples.size() << " samples in " << batches
-  //             << " batches to " << dir;
-  //   auto it = samples.begin();
-  //   for (size_t i = 0; i < batches; ++i) {
-  //     std::string batch_name = absl::StrCat("batch_", i + 1, ".sample");
-  //     std::ofstream out(dir / batch_name);
-  //     if (!out) {
-  //       LOG(ERROR) << "Failed to open " << batch_name;
-  //       return 1;
-  //     }
-  //     for (size_t j = 0; j < batch_size && it != samples.end(); ++j, ++it) {
-  //       out << *it << '\n';
-  //     }
-  //     out.close();
-  //   }
-  LOG(INFO) << "Done";
+  LOG(INFO) << "Done, " << samples.size() << " samples copied";
   return 0;
 }
