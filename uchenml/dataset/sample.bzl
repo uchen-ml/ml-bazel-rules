@@ -25,7 +25,7 @@ def sample_impl(ctx):
         args.add("--samples", ctx.attr.samples)
     args.add("--output", output_dir.path)
     args.add("--seed", ctx.attr.seed)
-    # args.add("--stderrthreshold=0")
+    args.add("--stderrthreshold=0")
     args.add(directory.path)
     ctx.actions.run(
         inputs = [directory],
@@ -37,5 +37,6 @@ def sample_impl(ctx):
     return [DefaultInfo(
         files = depset([output_dir]),
     ), DatasetInfo(
-        data = depset([output_dir]),
+        data = [output_dir],
+        max_samples = ctx.attr.samples,
     )]

@@ -117,20 +117,18 @@ int main(int argc, char* argv[]) {
     prefix_str[i] = '0';
   }
   size_t dirs = std::sqrt(samples.size());
+  dirs = (dirs + 9) / 10 * 10;
   size_t samples_per_dir = (samples.size() - 1 + dirs) / dirs;
   for (size_t d = 0; d < dirs; ++d) {
     auto dir = output_dir / std::to_string(d + 1);
     std::filesystem::create_directory(dir);
-    for (size_t i = 0; i < samples_per_dir; ++i) {
-      size_t ind = d * samples_per_dir + i;
-      if (ind >= samples.size()) {
-        break;
-      }
-      std::string filename = absl::StrCat(prefix_str, i + 1);
+    for (size_t i = d * samples_per_dir;
+         i < std::min((d + 1) * samples_per_dir, samples.size()); ++i) {
+      std::string filename = absl::StrCat(prefix_str, i % samples_per_dir + 1);
       std::filesystem::path dst =
           dir / (filename.substr(filename.length() - prefix_str.length()) +
                  ".sample");
-      std::filesystem::copy_file(samples[ind], dst);
+      std::filesystem::copy_file(samples[i], dst);
     }
   }
   LOG(INFO) << "Done, " << samples.size() << " samples copied";
