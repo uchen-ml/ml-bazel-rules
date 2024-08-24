@@ -4,8 +4,6 @@ load("//uchenml:images.bzl", "resize_image")
 
 web_archive_dataset(
     name = "grpc_cpp",
-    url = "https://github.com/grpc/grpc/archive/78cfebc3bd22ef20b60b208058e667eb720a9240.tar.gz",
-    md5 = "b2b3ae2a46a2500b57a7f9b85d0fa161",
     include = [
         "src",
         "test",
@@ -14,17 +12,19 @@ web_archive_dataset(
         "src/ruby",
         "src/compiler/",
         "src/core/ext/upb-gen",
-        "src/core/ext/upbdefs-gen"
+        "src/core/ext/upbdefs-gen",
     ],
     extensions = [
         "cc",
         "h",
     ],
-    min_size = 200,
     max_size = 50000,
+    md5 = "b2b3ae2a46a2500b57a7f9b85d0fa161",
+    min_size = 200,
     samples = 2000,
     seed = 10,
     strip_prefix_segments = 1,
+    url = "https://github.com/grpc/grpc/archive/78cfebc3bd22ef20b60b208058e667eb720a9240.tar.gz",
 )
 
 bag_of_words(
@@ -35,7 +35,10 @@ bag_of_words(
 
 resize_image(
     name = "resize_logo",
-    srcs = ["uchen-logo.svg"],
-    width = 500,
-    height = 500,
+    srcs = [
+        "uchen-logo.svg",
+        "uchen-logo-text.svg",
+    ],
+    height = 250,
+    width = 250,
 )
