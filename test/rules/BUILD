@@ -1,5 +1,6 @@
 load("//uchenml:bow.bzl", "bag_of_words")
 load("//uchenml:datasets.bzl", "web_archive_dataset")
+load("//uchenml:images.bzl", "resize_image")
 
 web_archive_dataset(
     name = "grpc_cpp",
@@ -30,4 +31,11 @@ bag_of_words(
     name = "codeart_bow",
     srcs = [":grpc_cpp"],
     vocab_size = 1000,
+)
+
+resize_image(
+    name = "resize_logo",
+    srcs = ["uchen-logo.svg"],
+    width = 500,
+    height = 500,
 )
