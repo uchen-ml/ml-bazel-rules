@@ -7,6 +7,7 @@ def _pad(n, length):
     return "0" * (length - len(str(n))) + str(n)
 
 def _build_ops(ctx, rule_name, src, base):
+    # Resize maintaining the aspect ratio.
     resize1_args = ctx.actions.args()
     resize1_args.add("-density", "300")
     resize1_args.add("-resize", "%sx%s" % (ctx.attr.width, ctx.attr.height))
@@ -19,6 +20,7 @@ def _build_ops(ctx, rule_name, src, base):
         outputs = [temp_file],
         arguments = [resize1_args],
     )
+    # Add empty space to make the image expected size.
     resize2_args = ctx.actions.args()
     resize2_args.add("-gravity", "center")
     resize2_args.add("-extent", "%sx%s" % (ctx.attr.width, ctx.attr.height))
