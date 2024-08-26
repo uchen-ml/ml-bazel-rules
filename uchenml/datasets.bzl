@@ -49,55 +49,24 @@ unpack = rule(
     },
 )
 
-def web_archive_dataset(
-        name,
-        url,
-        md5,
-        strip_prefix_segments,
-        include,
-        exclude,
-        extensions,
-        min_size,
-        max_size = 0,
-        samples = 0,
-        batch_size = 50,
-        seed = 42):
+def web_archive(name, url, md5, strip_prefix_segments):
     """
     Downloads a web archive and unpacks it.
 
     Args:
-        url: The URL of the archive.
         name: The name of the target.
-        strip_prefix_segments: The number of segments to strip from paths in the archive.
-        include: A list of paths to include in the sample.
-        exclude: A list of paths to exclude from the sample.
-        extensions: A list of file extensions to include in the sample.
-        min_size: The minimum size of files to include in the sample.
-        max_size: The maximum size of files to include in the sample.
-        samples: The number of samples to take.
-        seed: The seed for the random number generator.
+        url: The URL of the archive.
         md5: The MD5 checksum of the archive.
-        batch_size: The batch size for the sample.
+        strip_prefix_segments: The number of segments to strip from paths in the archive.
     """
+    dl_task = name + "_download"
     http_download(
-        name = name + "_download",
+        name = dl_task,
         url = url,
         md5 = md5,
     )
     unpack(
-        name = name + "_unpack",
-        input = ":" + name + "_download",
-        strip_prefix_segments = strip_prefix_segments,
-    )
-    sample(
         name = name,
-        src = name + "_unpack",
-        include = include,
-        exclude = exclude,
-        extensions = extensions,
-        min_size = min_size,
-        max_size = max_size,
-        samples = samples,
-        seed = seed,
-        batch_size = batch_size,
+        input = ":" + dl_task,
+        strip_prefix_segments = strip_prefix_segments,
     )
