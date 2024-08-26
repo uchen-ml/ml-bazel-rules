@@ -20,7 +20,7 @@ web_archive_dataset(
     ],
     max_size = 50000,
     md5 = "b2b3ae2a46a2500b57a7f9b85d0fa161",
-    min_size = 200,
+    min_size = 1900,
     samples = 2000,
     seed = 10,
     strip_prefix_segments = 1,

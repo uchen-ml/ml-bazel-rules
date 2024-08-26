@@ -105,12 +105,18 @@ int main(int argc, char* argv[]) {
     includes.pop();
   }
   std::vector<std::string> samples(files.begin(), files.end());
-  if (absl::GetFlag(FLAGS_samples) > 0) {
+  size_t samples_needed = absl::GetFlag(FLAGS_samples);
+  if (samples.size() < samples_needed) {
+    std::cerr << "Not enough samples found, " << samples.size()
+              << " samples found\n";
+    return 1;
+  }
+  if (samples_needed > 0) {
     std::mt19937 gen(absl::GetFlag(FLAGS_seed));
     // It is templting to use std::sample here, but it will generate entirely
     // new list when size changes, which causes more recomplutes than needed.
     std::shuffle(samples.begin(), samples.end(), gen);
-    samples.resize(std::min(absl::GetFlag(FLAGS_samples), samples.size()));
+    samples.resize(std::min(samples_needed, samples.size()));
   }
   std::string prefix_str = std::to_string(samples.size());
   for (size_t i = 0; i < prefix_str.length(); ++i) {
