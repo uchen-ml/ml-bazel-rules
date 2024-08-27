@@ -26,9 +26,8 @@ sample = rule(
         "extensions": attr.string_list(),
         "min_size": attr.int(),
         "max_size": attr.int(),
-        "samples": attr.int(),
+        "samples": attr.int(mandatory = True),
         "seed": attr.int(default = 42),
-        "batch_size": attr.int(default = 50),
         "_sampler_bin": attr.label(
             default = Label("//src/sampler:sampler"),
             executable = True,

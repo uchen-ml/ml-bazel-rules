@@ -19,7 +19,7 @@ class PathMatcher {
         exts_(exts),
         min_size_(min_size),
         max_size_(max_size) {}
-  bool operator()(std::string_view path);
+  bool operator()(std::string_view path) const;
 
  private:
   std::unordered_set<std::string> excludes_;

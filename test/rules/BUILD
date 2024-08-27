@@ -1,6 +1,7 @@
 load("//uchenml:bow.bzl", "bag_of_words")
 load("//uchenml:datasets.bzl", "sample", "web_archive")
 load("//uchenml:images.bzl", "resize_image")
+load("//uchenml:text.bzl", "extract_text")
 
 web_archive(
     name = "grpc_cpp_dl",
@@ -28,8 +29,15 @@ sample(
     ],
     max_size = 50000,
     min_size = 1000,
-    samples = 2000,
+    samples = 20,
     seed = 10,
+)
+
+extract_text(
+    name = "grpc_cpp_middle_text",
+    srcs = [":grpc_cpp"],
+    min_length = 100,
+    max_length = 1000,
 )
 
 bag_of_words(
