@@ -7,12 +7,12 @@
 #include <random>
 #include <set>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -29,7 +29,7 @@ ABSL_FLAG(size_t, max_size, std::numeric_limits<size_t>::max(),
 ABSL_FLAG(int, seed, 42, "Random seed");
 ABSL_FLAG(size_t, samples, 0, "Number of samples");
 ABSL_FLAG(std::string, output, {}, "Output directory for samples");
-ABSL_FLAG(size_t, dirs, 0, "Number of directories to split samples");
+ABSL_FLAG(size_t, per_dir, 0, "Number of samples per directory");
 
 namespace {
 
@@ -128,23 +128,28 @@ int main(int argc, char* argv[]) {
     std::shuffle(samples.begin(), samples.end(), gen);
     samples.resize(std::min(samples_needed, samples.size()));
   }
-  size_t dirs = absl::GetFlag(FLAGS_dirs);
-  if (dirs == 0) {
+  size_t per_dir = absl::GetFlag(FLAGS_per_dir);
+  if (per_dir == 0) {
     std::cerr << "Number of directories is required\n";
     return 1;
   }
-  size_t samples_per_dir = (samples.size() - 1 + dirs) / dirs;
-  for (size_t d = 0; d < dirs; ++d) {
-    auto dir = output_dir / std::to_string(d + 1);
-    std::filesystem::create_directory(dir);
-    for (size_t i = 0; i < samples_per_dir; ++i) {
-      size_t ind = d * samples_per_dir + i;
-      if (ind >= samples.size()) {
-        break;
-      }
-      std::filesystem::path dst = dir / absl::StrCat(i + 1, ".sample");
-      std::filesystem::copy_file(samples[ind], dst);
+  size_t dirs = (samples.size() - 1 + per_dir) / per_dir;
+  absl::AnyInvocable<std::filesystem::path(size_t)> path_builder =
+      [&output_dir](size_t i) {
+        return output_dir / absl::StrCat(i + 1, ".sample");
+      };
+  if (dirs > 1) {
+    for (size_t i = 1; i <= dirs; ++i) {
+      std::filesystem::create_directory(output_dir / std::to_string(i));
     }
+    path_builder = [&output_dir, dirs](size_t i) {
+      return output_dir / std::to_string((i % dirs) + 1) /
+             absl::StrCat((i / dirs) + 1, ".sample");
+    };
+  }
+  for (size_t i = 0; i < samples.size(); ++i) {
+    LOG(INFO) << "Copying " << samples[i] << " to " << path_builder(i);
+    std::filesystem::copy_file(samples[i], path_builder(i));
   }
   LOG(INFO) << "Done, " << samples.size() << " samples copied";
   return 0;

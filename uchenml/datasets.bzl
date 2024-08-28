@@ -20,15 +20,24 @@ http_download = rule(
 sample = rule(
     implementation = sample_impl,
     attrs = {
-        "src": attr.label(allow_files = True, mandatory = True),
-        "include": attr.string_list(),
-        "exclude": attr.string_list(),
-        "extensions": attr.string_list(),
-        "min_size": attr.int(),
-        "max_size": attr.int(),
-        "samples": attr.int(mandatory = True),
-        "seed": attr.int(default = 42),
+        "src": attr.label(
+            allow_files = False,
+            mandatory = True,
+            doc = "The source directory",
+        ),
+        "include": attr.string_list(doc = "List of directories to include"),
+        "exclude": attr.string_list(doc = "List of directories to exclude"),
+        "extensions": attr.string_list(doc = "List of file extensions to include"),
+        "min_size": attr.int(doc = "Minimum file size"),
+        "max_size": attr.int(doc = "Maximum file size"),
+        "samples": attr.int(mandatory = True, doc = "Number of samples to generate"),
+        "seed": attr.int(default = 42, doc = "Random seed"),
+        "max_samples_per_dir": attr.int(
+            default = 1000,
+            doc = "Maximum number of samples per directory",
+        ),
         "_sampler_bin": attr.label(
+            doc = "The sampler binary",
             default = Label("//src/sampler:sampler"),
             executable = True,
             cfg = "exec",

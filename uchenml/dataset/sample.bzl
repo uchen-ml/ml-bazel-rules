@@ -1,7 +1,6 @@
 """ Definition of the sampling rule """
 
 load("//uchenml:providers.bzl", "DatasetInfo")
-load("//uchenml:utils.bzl", "samples_dir_count")
 
 def sample_impl(ctx):
     """
@@ -15,14 +14,21 @@ def sample_impl(ctx):
     """
     samples = ctx.attr.samples
     if samples < 1:
-        fail("No samples were requested: %d" %samples)
-    dirs = samples_dir_count(samples)
+        fail("No samples were requested: %d" % samples)
+    samples_per_dir = ctx.attr.max_samples_per_dir
+    dirs = (samples + samples_per_dir - 1) // samples_per_dir
     name = ctx.attr.name
-    outputs = []
-    for i in range(samples):
-        outputs.append(ctx.actions.declare_file("%s/%d/%d.sample" % (name, (i % dirs) + 1, (i // dirs) + 1)))
+    name_gen = lambda i: "%s/%d.sample" % (name, i + 1)
+    if dirs > 1:
+        name_gen = lambda i: "%s/%d/%d.sample" % (
+            name,
+            (i % dirs) + 1,
+            (i // dirs) + 1,
+        )
+    outputs = sorted([ctx.actions.declare_file(name_gen(i)) for i in range(samples)])
     dirname = outputs[0].dirname
-    dirname = dirname[:dirname.rfind("/")]
+    if dirs > 1:
+        dirname = dirname[:dirname.rfind("/")]
     directory = ctx.files.src[0]
     args = ctx.actions.args()
     args.add_joined("--included", ctx.attr.include, join_with = ",", uniquify = True, expand_directories = False)
@@ -34,7 +40,8 @@ def sample_impl(ctx):
     args.add("--samples", ctx.attr.samples)
     args.add("--output", dirname)
     args.add("--seed", ctx.attr.seed)
-    args.add("--dirs", dirs)
+    args.add("--per_dir", samples_per_dir)
+    args.add("--stderrthreshold", "0")
     args.add(directory.path)
     ctx.actions.run(
         inputs = [directory],

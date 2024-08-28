@@ -1,6 +1,5 @@
 """ Rules for text manipulation. """
 
-load("//uchenml:utils.bzl", "samples_dir_count")
 load("providers.bzl", "DatasetInfo")
 
 def _file_name(name, samples_per_dir, n):
@@ -8,35 +7,46 @@ def _file_name(name, samples_per_dir, n):
 
 def _extract_text_impl(ctx):
     srcs = ctx.files.srcs
-    dirs = samples_dir_count(len(srcs))
-    samples_per_dir = len(srcs) // dirs
     outputs = []
-    files_per_call = ctx.attr.files_per_call
-    for d in range(dirs):
-        for s in range(samples_per_dir // files_per_call + 1):
-            start = d * samples_per_dir + s * files_per_call
-            action_inputs = srcs[start:start + files_per_call]
-            action_outputs = [
-                ctx.actions.declare_file(_file_name(ctx.attr.name, samples_per_dir, i))
-                for i in range(start, start + len(action_inputs))
-            ]
-            print(action_inputs)
-            print(action_outputs)
-            args = ctx.actions.args()
-            args.add_joined("--inputs", action_inputs, join_with = ",")
-            args.add_joined("--outputs", action_outputs, join_with = ",")
-            args.add("--seed", ctx.attr.seed + start)
-            args.add("--min_length", ctx.attr.min_length)
-            args.add("--max_length", ctx.attr.max_length)
-            ctx.actions.run(
-                inputs = action_inputs,
-                outputs = action_outputs,
-                executable = ctx.file._extractor_tool,
-                arguments = [args],
-                progress_message = "Extracting text from files %d-%d" % (start, start + files_per_call),
-            )
-            outputs += action_outputs
-    print(outputs)
+    # dirs = samples_dir_count(len(srcs))
+    # samples_per_dir = len(srcs) // dirs
+    # outputs = []
+    # files_per_call = ctx.attr.files_per_call
+    # for d in range(dirs):
+    #     for s in range(samples_per_dir // files_per_call + 1):
+    #         start = d * samples_per_dir + s * files_per_call
+    #         print("Dir: %d, batch: %d %d %s" % (
+    #             d,
+    #             s,
+    #             start,
+    #             [f.short_path for f in srcs[start:start + files_per_call]],
+    #         ))
+    # for d in range(dirs):
+    #     for s in range(samples_per_dir // files_per_call + 1):
+    #         start = d * samples_per_dir + s * files_per_call
+    #         action_inputs = srcs[start:start + files_per_call]
+    #         action_outputs = [
+    #             ctx.actions.declare_file(_file_name(ctx.attr.name, samples_per_dir, i))
+    #             for i in range(start, start + len(action_inputs))
+    #         ]
+    #         args = ctx.actions.args()
+    #         # args.add_joined("--inputs", action_inputs, join_with = ",")
+    #         args.add_joined("--outputs", action_outputs, join_with = ",")
+    #         # args.add("--seed", ctx.attr.seed + start)
+    #         # args.add("--min_length", ctx.attr.min_length)
+    #         # args.add("--max_length", ctx.attr.max_length)
+    #         # args.add("--stderrthreshold", 0)
+    #         ctx.actions.run(
+    #             inputs = action_inputs,
+    #             outputs = action_outputs,
+    #             executable = ctx.file._extractor_tool,
+    #             arguments = [args],
+    #             progress_message = "Extracting text from files %d-%d" % (
+    #                 start,
+    #                 start + len(action_inputs),
+    #             ),
+    #         )
+    #         outputs += action_outputs
     return [DefaultInfo(files = depset(outputs))]
 
 extract_text = rule(

@@ -27,17 +27,17 @@ sample(
         "cc",
         "h",
     ],
-    max_size = 50000,
-    min_size = 1000,
+    max_size = 20000,
+    min_size = 2000,
     samples = 20,
-    seed = 10,
+    max_samples_per_dir = 7
 )
 
 extract_text(
     name = "grpc_cpp_middle_text",
     srcs = [":grpc_cpp"],
-    min_length = 100,
-    max_length = 1000,
+    min_length = 1000,
+    max_length = 3000,
 )
 
 bag_of_words(
