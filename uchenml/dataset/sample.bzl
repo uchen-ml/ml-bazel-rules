@@ -1,6 +1,7 @@
 """ Definition of the sampling rule """
 
 load("//uchenml:providers.bzl", "DatasetInfo")
+load("//uchenml:utils.bzl", "build_outputs")
 
 def sample_impl(ctx):
     """
@@ -17,15 +18,10 @@ def sample_impl(ctx):
         fail("No samples were requested: %d" % samples)
     samples_per_dir = ctx.attr.max_samples_per_dir
     dirs = (samples + samples_per_dir - 1) // samples_per_dir
-    name = ctx.attr.name
-    name_gen = lambda i: "%s/%d.sample" % (name, i + 1)
-    if dirs > 1:
-        name_gen = lambda i: "%s/%d/%d.sample" % (
-            name,
-            (i % dirs) + 1,
-            (i // dirs) + 1,
-        )
-    outputs = sorted([ctx.actions.declare_file(name_gen(i)) for i in range(samples)])
+    outputs = [
+        ctx.actions.declare_file(f)
+        for f in build_outputs(ctx.attr.name, dirs, samples)
+    ]
     dirname = outputs[0].dirname
     if dirs > 1:
         dirname = dirname[:dirname.rfind("/")]
