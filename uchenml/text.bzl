@@ -22,11 +22,13 @@ def _tool_invocation(ctx, inputs, outputs, label):
 def _extract_text_impl(ctx):
     srcs = ctx.files.srcs
     outputs = []
-    samples_per_dir = ctx.attr.max_samples_per_dir
-    dirs = (len(srcs) + samples_per_dir - 1) // samples_per_dir
     outputs = [
         ctx.actions.declare_file(f)
-        for f in build_outputs(ctx.attr.name, dirs, len(srcs))
+        for f in build_outputs(
+            ctx.attr.name,
+            len(srcs),
+            ctx.attr.max_samples_per_dir,
+        )
     ]
     per_invocation = ctx.attr.files_per_tool_invocation
     invocations = (len(srcs) + per_invocation - 1) // per_invocation

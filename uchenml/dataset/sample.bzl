@@ -20,7 +20,7 @@ def sample_impl(ctx):
     dirs = (samples + samples_per_dir - 1) // samples_per_dir
     outputs = [
         ctx.actions.declare_file(f)
-        for f in build_outputs(ctx.attr.name, dirs, samples)
+        for f in build_outputs(ctx.attr.name, samples, samples_per_dir)
     ]
     dirname = outputs[0].dirname
     if dirs > 1:
@@ -37,7 +37,7 @@ def sample_impl(ctx):
     args.add("--output", dirname)
     args.add("--seed", ctx.attr.seed)
     args.add("--per_dir", samples_per_dir)
-    args.add("--stderrthreshold", "0")
+    # args.add("--stderrthreshold", "0")
     args.add(directory.path)
     ctx.actions.run(
         inputs = [directory],
