@@ -7,7 +7,7 @@ def _tool_invocation(ctx, inputs, outputs, label):
     args = ctx.actions.args()
     args.add_joined("--inputs", inputs, join_with = ",")
     args.add_joined("--outputs", outputs, join_with = ",")
-    args.add("--seed", ctx.attr.seed ^ hash(label))
+    args.add("--seed", abs(ctx.attr.seed ^ hash(label)))
     args.add("--min_length", ctx.attr.min_length)
     args.add("--max_length", ctx.attr.max_length)
     args.add("--stderrthreshold", 0)

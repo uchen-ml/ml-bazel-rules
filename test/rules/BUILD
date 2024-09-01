@@ -28,8 +28,8 @@ sample(
         "h",
     ],
     max_size = 20000,
-    min_size = 2000,
-    samples = 20,
+    min_size = 1000,
+    samples = 2000,
     max_samples_per_dir = 7
 )
 

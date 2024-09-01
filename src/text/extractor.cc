@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -37,13 +38,9 @@ int main(int argc, char* argv[]) {
   size_t min_length = absl::GetFlag(FLAGS_min_length);
   size_t max_length = absl::GetFlag(FLAGS_max_length);
   std::mt19937 gen{absl::GetFlag(FLAGS_seed)};
-  std::uniform_int_distribution<size_t> distr(min_length, max_length);
+  std::uniform_real_distribution<double> distr(0, 1);
   for (size_t i = 0; i < inputs.size(); ++i) {
     size_t file_size = std::filesystem::file_size(inputs[i]);
-    if (file_size < max_length) {
-      std::cerr << "File " << inputs[i] << " is shorter than max_length\n";
-      return 1;
-    }
     std::ifstream input{inputs[i]};
     if (!input) {
       std::cerr << "Failed to open " << inputs[i] << " for reading\n";
@@ -53,7 +50,10 @@ int main(int argc, char* argv[]) {
       std::cerr << "Failed to open " << outputs[i] << " for writing\n";
     }
     std::istreambuf_iterator<char> it{input};
-    size_t sample_len = distr(gen);
+    size_t sample_len = std::max(
+        min_length,
+        static_cast<size_t>(std::floor(
+            distr(gen) * std::min(file_size, max_length - min_length))));
     int start =
         std::uniform_int_distribution<size_t>{0, file_size - sample_len}(gen);
     std::vector<char> buffer(sample_len, 0);
