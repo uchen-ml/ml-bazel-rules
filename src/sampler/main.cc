@@ -12,6 +12,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -28,6 +29,7 @@ ABSL_FLAG(size_t, max_size, std::numeric_limits<size_t>::max(),
 ABSL_FLAG(int, seed, 42, "Random seed");
 ABSL_FLAG(size_t, samples, 0, "Number of samples");
 ABSL_FLAG(std::string, output, {}, "Output directory for samples");
+ABSL_FLAG(size_t, per_dir, 0, "Number of samples per directory");
 
 namespace {
 
@@ -44,25 +46,53 @@ std::queue<std::filesystem::path> GetUniqueCanonicalPaths(const S& paths) {
   return result;
 }
 
+std::vector<std::string> BuildFileList(
+    const std::filesystem::path& directory,
+    const uchen::data::PathMatcher& matcher,
+    const std::filesystem::path& prefix = std::filesystem::current_path()) {
+  size_t prefix_len = prefix.string().length() + 1;
+  std::set<std::string> files;
+  std::queue<std::filesystem::path> includes;
+  for (const auto& include : absl::GetFlag(FLAGS_included)) {
+    includes.emplace(directory / include);
+  }
+  while (!includes.empty()) {
+    for (const auto& entry :
+         std::filesystem::directory_iterator(includes.front())) {
+      if (!std::filesystem::exists(entry)) {
+        LOG(ERROR) << entry << " does not exist";
+        continue;
+      }
+      if (std::filesystem::is_directory(entry)) {
+        includes.emplace(entry);
+        continue;
+      }
+      std::string path = entry.path().string();
+      if (matcher(path)) {
+        files.emplace(path.substr(prefix_len));
+      }
+    }
+    includes.pop();
+  }
+  return std::vector<std::string>(std::move_iterator(files.begin()),
+                                  std::move_iterator(files.end()));
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
   absl::InitializeLog();
   auto paths = absl::ParseCommandLine(argc, argv);
   absl::SetProgramUsageMessage(
-      absl::StrCat("Usage: ", paths[0], " <directort>"));
+      absl::StrCat("Usage: ", paths[0], " <directory>"));
+  LOG(INFO) << "Arguments: "
+            << absl::StrJoin(std::span(argv, argc).subspan(1), " ");
   if (paths.size() < 2) {
     std::cerr << "Directory is required. Usage:\n  " << paths[0]
               << " <directory>\n";
     return 1;
   }
   std::filesystem::path directory = std::filesystem::canonical(paths[1]);
-  LOG(INFO) << "Arguments: "
-            << absl::StrJoin(std::span(argv, argc).subspan(1), " ");
-  std::queue<std::filesystem::path> includes;
-  for (const auto& include : absl::GetFlag(FLAGS_included)) {
-    includes.emplace(directory / include);
-  }
   std::vector<std::string> excludes;
   for (const auto& exclude : absl::GetFlag(FLAGS_excluded)) {
     excludes.emplace_back((directory / exclude).string());
@@ -77,61 +107,49 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << output_dir << " is not a valid directory";
     return 1;
   }
-  uchen::data::PathMatcher matcher =
-      uchen::data::PathMatcherBuilder()
-          .excluding(excludes)
-          .only_extensions(absl::GetFlag(FLAGS_ext))
-          .set_min_size(absl::GetFlag(FLAGS_min_size))
-          .set_max_size(absl::GetFlag(FLAGS_max_size))
-          .build();
-  std::set<std::string> files;
-  std::string prefix = std::filesystem::current_path().string();
-  while (!includes.empty()) {
-    for (const auto& entry :
-         std::filesystem::directory_iterator(includes.front())) {
-      if (!std::filesystem::exists(entry)) {
-        LOG(ERROR) << entry << " does not exist";
-        continue;
-      }
-      if (std::filesystem::is_directory(entry)) {
-        includes.emplace(entry);
-        continue;
-      }
-      std::string path = entry.path().string();
-      if (matcher(path)) {
-        files.emplace(path.substr(prefix.size() + 1));
-      }
-    }
-    includes.pop();
+  auto matcher = uchen::data::PathMatcherBuilder()
+                     .excluding(excludes)
+                     .only_extensions(absl::GetFlag(FLAGS_ext))
+                     .set_min_size(absl::GetFlag(FLAGS_min_size))
+                     .set_max_size(absl::GetFlag(FLAGS_max_size))
+                     .build();
+  std::vector<std::string> samples = BuildFileList(directory, matcher);
+  size_t samples_needed = absl::GetFlag(FLAGS_samples);
+  if (samples.size() < samples_needed) {
+    std::cerr << "Not enough samples found, " << samples.size()
+              << " samples found\n";
+    return 1;
   }
-  std::vector<std::string> samples(files.begin(), files.end());
-  if (absl::GetFlag(FLAGS_samples) > 0) {
+  if (samples_needed > 0) {
     std::mt19937 gen(absl::GetFlag(FLAGS_seed));
     // It is templting to use std::sample here, but it will generate entirely
-    // new list when size changes, which causes more recomplutes than needed.
+    // new list when when number of samples changes, which causes more
+    // recomputes than needed.
     std::shuffle(samples.begin(), samples.end(), gen);
-    samples.resize(std::min(absl::GetFlag(FLAGS_samples), samples.size()));
+    samples.resize(std::min(samples_needed, samples.size()));
   }
-  std::string prefix_str = std::to_string(samples.size());
-  for (size_t i = 0; i < prefix_str.length(); ++i) {
-    prefix_str[i] = '0';
+  size_t per_dir = absl::GetFlag(FLAGS_per_dir);
+  if (per_dir == 0) {
+    std::cerr << "Number of directories is required\n";
+    return 1;
   }
-  size_t dirs = std::sqrt(samples.size());
-  size_t samples_per_dir = (samples.size() - 1 + dirs) / dirs;
-  for (size_t d = 0; d < dirs; ++d) {
-    auto dir = output_dir / std::to_string(d + 1);
-    std::filesystem::create_directory(dir);
-    for (size_t i = 0; i < samples_per_dir; ++i) {
-      size_t ind = d * samples_per_dir + i;
-      if (ind >= samples.size()) {
-        break;
-      }
-      std::string filename = absl::StrCat(prefix_str, i + 1);
-      std::filesystem::path dst =
-          dir / (filename.substr(filename.length() - prefix_str.length()) +
-                 ".sample");
-      std::filesystem::copy_file(samples[ind], dst);
+  size_t dirs = (samples.size() - 1 + per_dir) / per_dir;
+  absl::AnyInvocable<std::filesystem::path(size_t)> path_builder =
+      [&output_dir](size_t i) {
+        return output_dir / absl::StrCat(i + 1, ".sample");
+      };
+  if (dirs > 1) {
+    for (size_t i = 1; i <= dirs; ++i) {
+      std::filesystem::create_directory(output_dir / std::to_string(i));
     }
+    path_builder = [&output_dir, dirs](size_t i) {
+      return output_dir / std::to_string((i % dirs) + 1) /
+             absl::StrCat((i / dirs) + 1, ".sample");
+    };
+  }
+  for (size_t i = 0; i < samples.size(); ++i) {
+    LOG(INFO) << "Copying " << samples[i] << " to " << path_builder(i);
+    std::filesystem::copy_file(samples[i], path_builder(i));
   }
   LOG(INFO) << "Done, " << samples.size() << " samples copied";
   return 0;

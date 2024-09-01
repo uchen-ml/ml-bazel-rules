@@ -22,7 +22,7 @@ std::string AddTrailingSlash(std::string_view path) {
 //
 // PathMatcher
 //
-bool PathMatcher::operator()(std::string_view path) {
+bool PathMatcher::operator()(std::string_view path) const {
   if (path.length() == 0) {
     return false;
   }

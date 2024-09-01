@@ -20,16 +20,24 @@ http_download = rule(
 sample = rule(
     implementation = sample_impl,
     attrs = {
-        "src": attr.label(allow_files = True, mandatory = True),
-        "include": attr.string_list(),
-        "exclude": attr.string_list(),
-        "extensions": attr.string_list(),
-        "min_size": attr.int(),
-        "max_size": attr.int(),
-        "samples": attr.int(),
-        "seed": attr.int(default = 42),
-        "batch_size": attr.int(default = 50),
+        "src": attr.label(
+            allow_files = False,
+            mandatory = True,
+            doc = "The source directory",
+        ),
+        "include": attr.string_list(doc = "List of directories to include"),
+        "exclude": attr.string_list(doc = "List of directories to exclude"),
+        "extensions": attr.string_list(doc = "List of file extensions to include"),
+        "min_size": attr.int(doc = "Minimum file size"),
+        "max_size": attr.int(doc = "Maximum file size"),
+        "samples": attr.int(mandatory = True, doc = "Number of samples to generate"),
+        "seed": attr.int(default = 42, doc = "Random seed"),
+        "max_samples_per_dir": attr.int(
+            default = 1000,
+            doc = "Maximum number of samples per directory",
+        ),
         "_sampler_bin": attr.label(
+            doc = "The sampler binary",
             default = Label("//src/sampler:sampler"),
             executable = True,
             cfg = "exec",
@@ -49,55 +57,24 @@ unpack = rule(
     },
 )
 
-def web_archive_dataset(
-        name,
-        url,
-        md5,
-        strip_prefix_segments,
-        include,
-        exclude,
-        extensions,
-        min_size,
-        max_size = 0,
-        samples = 0,
-        batch_size = 50,
-        seed = 42):
+def web_archive(name, url, md5, strip_prefix_segments):
     """
     Downloads a web archive and unpacks it.
 
     Args:
-        url: The URL of the archive.
         name: The name of the target.
-        strip_prefix_segments: The number of segments to strip from paths in the archive.
-        include: A list of paths to include in the sample.
-        exclude: A list of paths to exclude from the sample.
-        extensions: A list of file extensions to include in the sample.
-        min_size: The minimum size of files to include in the sample.
-        max_size: The maximum size of files to include in the sample.
-        samples: The number of samples to take.
-        seed: The seed for the random number generator.
+        url: The URL of the archive.
         md5: The MD5 checksum of the archive.
-        batch_size: The batch size for the sample.
+        strip_prefix_segments: The number of segments to strip from paths in the archive.
     """
+    dl_task = name + "_download"
     http_download(
-        name = name + "_download",
+        name = dl_task,
         url = url,
         md5 = md5,
     )
     unpack(
-        name = name + "_unpack",
-        input = ":" + name + "_download",
-        strip_prefix_segments = strip_prefix_segments,
-    )
-    sample(
         name = name,
-        src = name + "_unpack",
-        include = include,
-        exclude = exclude,
-        extensions = extensions,
-        min_size = min_size,
-        max_size = max_size,
-        samples = samples,
-        seed = seed,
-        batch_size = batch_size,
+        input = ":" + dl_task,
+        strip_prefix_segments = strip_prefix_segments,
     )
