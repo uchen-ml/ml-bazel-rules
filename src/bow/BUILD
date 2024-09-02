@@ -25,3 +25,13 @@ cc_library(
         "@abseil-cpp//absl/strings:str_format",
     ],
 )
+
+cc_library(
+    name = "extract_words",
+    srcs = ["extract_words.cc"],
+    hdrs = ["extract_words.h"],
+    deps = [
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/strings",
+    ],
+)
