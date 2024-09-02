@@ -29,7 +29,7 @@ sample(
     ],
     max_size = 20000,
     min_size = 1000,
-    samples = 128,
+    samples = 2000,
 )
 
 extract_text(
@@ -43,6 +43,7 @@ bag_of_words(
     name = "codeart_bow",
     srcs = [":grpc_cpp"],
     size = 1000,
+    files_per_invocation = 256,
 )
 
 resize_image(

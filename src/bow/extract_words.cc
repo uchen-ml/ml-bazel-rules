@@ -15,28 +15,27 @@ class ExtractorState {
       current_type_ = TokenType::kNone;
       return true;
     }
-    if (absl::ascii_isalnum(c) ||
-        (c == '.' && current_type_ == TokenType::kAlNum)) {
-      if (absl::ascii_isupper(c)) {
-        TokenType old = current_type_;
-        current_type_ =
-            old == TokenType::kUpperCase || old == TokenType::kSingleUpper
-                ? TokenType::kUpperCase
-                : TokenType::kSingleUpper;
-        return old != TokenType::kUpperCase && old != TokenType::kSingleUpper;
-      } else {
-        TokenType old = current_type_;
-        current_type_ = TokenType::kAlNum;
-        return old != TokenType::kAlNum && old != TokenType::kSingleUpper;
-      }
-    }
+    // Special exception for '.' in floating point numbers
     if (isOperator(c)) {
       TokenType old = current_type_;
       current_type_ = TokenType::kOperator;
       return old != TokenType::kOperator;
     }
-    if (!absl::ascii_isspace(c)) {
+    if (!absl::ascii_isalnum(c)) {
       LOG(INFO) << "Unknown character: " << c;
+      return true;
+    }
+    if (absl::ascii_isupper(c)) {
+      TokenType old = current_type_;
+      current_type_ =
+          old == TokenType::kUpperCase || old == TokenType::kSingleUpper
+              ? TokenType::kUpperCase
+              : TokenType::kSingleUpper;
+      return old != TokenType::kUpperCase && old != TokenType::kSingleUpper;
+    } else {
+      TokenType old = current_type_;
+      current_type_ = TokenType::kAlNum;
+      return old != TokenType::kAlNum && old != TokenType::kSingleUpper;
     }
     return true;
   }
