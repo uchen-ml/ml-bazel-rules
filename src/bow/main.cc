@@ -1,9 +1,10 @@
 #include <cstddef>
-#include <filesystem>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -12,15 +13,16 @@
 #include "absl/flags/usage.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include "src/bow/tokens.h"
+#include "src/bow/extract_words.h"
 
 ABSL_FLAG(std::vector<std::string>, inputs, {}, "List of input files");
 ABSL_FLAG(std::vector<std::string>, combine, {}, "List of files to combine");
 ABSL_FLAG(std::string, output, {}, "Output file");
-ABSL_FLAG(size_t, token_apperances, 3, "Minimum number of token apperances");
 
+namespace uchen::tools::text {
 namespace {
 
 template <typename T>
@@ -34,61 +36,27 @@ struct LessBySecondElement {
   }
 };
 
-std::string ReadInputBuffer(std::span<const std::string> files) {
-  std::stringstream ss;
+std::unordered_map<std::string, uint32_t> BuildBagOfWords(
+    const std::vector<std::string>& files) {
+  std::unordered_map<std::string, uint32_t> counts;
   for (std::string_view file : files) {
-    std::ifstream list_file(file.data());
-    if (!list_file) {
+    std::stringstream ss;
+    std::ifstream sample(file.data());
+    if (!sample) {
       LOG(ERROR) << "Unable to open file: " << file;
       continue;
     }
-    for (std::string line; std::getline(list_file, line);) {
-      std::ifstream input_file(std::filesystem::current_path() / line);
-      if (!input_file) {
-        LOG(ERROR) << "Unable to open file: "
-                   << std::filesystem::current_path() / line;
-        continue;
-      }
-      ss << input_file.rdbuf();
+    ss << sample.rdbuf();
+    for (const auto& [word, count] : ExtractWords(ss.view())) {
+      counts[word] += count;
     }
   }
-  return ss.str();
+  return counts;
 }
 
-std::vector<uchen::tools::tokens::Token> BuildTokenStream(
-    const std::string& input, size_t apperances) {
-  uchen::tools::tokens::TokenStore store;
-  bool more = true;
-  while (more) {
-    std::map combined = uchen::tools::tokens::Combine(store.Tokenize(input));
-    for (auto it = combined.begin(); it != combined.end();) {
-      if (it->second < apperances) {
-        it = combined.erase(it);
-      } else {
-        ++it;
-      }
-    }
-    more = store.Update(combined);
-  }
-  return store.Tokenize(input);
-}
-
-std::map<std::string, size_t> BuildBagOfWords(
-    const std::vector<std::string>& files, size_t apperances) {
-  std::string input = ReadInputBuffer(files);
-  LOG(INFO) << "Read " << input.size() << " bytes from input files";
-  std::map<std::string, size_t> tokens;
-  for (const auto& token : BuildTokenStream(input, apperances)) {
-    if (!token.is_special() && token.name().size() > 1) {
-      tokens[token.name()] += 1;
-    }
-  }
-  return tokens;
-}
-
-std::map<std::string, size_t> CombineBags(const std::vector<std::string>& files,
-                                          size_t apperances) {
-  std::map<std::string, size_t> tokens;
+std::unordered_map<std::string, uint32_t> CombineBags(
+    const std::vector<std::string>& files) {
+  std::unordered_map<std::string, uint32_t> tokens;
   for (const auto& file : files) {
     std::ifstream input_file(file);
     if (!input_file) {
@@ -120,7 +88,39 @@ std::map<std::string, size_t> CombineBags(const std::vector<std::string>& files,
   return tokens;
 }
 
+struct LessByFreq {
+  bool operator()(const std::pair<std::string, uint32_t>& one,
+                  const std::pair<std::string, uint32_t>& another) const {
+    if (one.second > another.second) {
+      return true;
+    } else if (one.second < another.second) {
+      return false;
+    } else {
+      return one.first < another.first;
+    }
+  }
+};
+
+std::vector<std::pair<std::string, uint32_t>> SortByFrequency(
+    const std::unordered_map<std::string, uint32_t>& words) {
+  std::vector<std::pair<std::string, uint32_t>> result;
+  result.reserve(words.size());
+  for (const auto& [word, freq] : words) {
+    if (word.length() > 1) {
+      result.emplace_back(word, freq);
+    }
+  }
+  std::sort(result.begin(), result.end(), LessByFreq());
+  LOG(INFO) << "Sorted " << result.size() << " tokens by frequency, top five: ";
+  for (const auto& [word, freq] : std::span(result).first(5)) {
+    LOG(INFO) << "    " << word << " -> " << freq;
+  }
+
+  return result;
+}
+
 }  // namespace
+}  // namespace uchen::tools::text
 
 int main(int argc, char* argv[]) {
   absl::InitializeLog();
@@ -145,14 +145,13 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << "Only one of --inputs or --combine can be specified";
     return 1;
   }
-  std::map<std::string, size_t> tokens =
-      inputs.empty()
-          ? CombineBags(combine, absl::GetFlag(FLAGS_token_apperances))
-          : BuildBagOfWords(inputs, absl::GetFlag(FLAGS_token_apperances));
-  for (const auto& [token, count] : tokens) {
+  std::unordered_map<std::string, uint32_t> tokens =
+      inputs.empty() ? uchen::tools::text::CombineBags(combine)
+                     : uchen::tools::text::BuildBagOfWords(inputs);
+  for (const auto& [token, count] :
+       uchen::tools::text::SortByFrequency(tokens)) {
     output << token << "\t" << count << std::endl;
   }
-  LOG(INFO) << "Wrote " << tokens.size() << " unique tokens to "
-            << absl::GetFlag(FLAGS_output);
+  LOG(INFO) << "Wrote tokens to " << absl::GetFlag(FLAGS_output);
   return 0;
 }

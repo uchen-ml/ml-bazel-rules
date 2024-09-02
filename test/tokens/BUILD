@@ -23,3 +23,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "word_extractor_test",
+    size = "small",
+    srcs = ["word_extractor.test.cc"],
+    deps = [
+        "//src/bow:extract_words",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:initialize",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -6,7 +6,7 @@ cc_binary(
     name = "bow",
     srcs = ["main.cc"],
     deps = [
-        ":bowlib",
+        ":extract_words",
         "@abseil-cpp//absl/flags:parse",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:flags",
@@ -23,5 +23,15 @@ cc_library(
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:str_format",
+    ],
+)
+
+cc_library(
+    name = "extract_words",
+    srcs = ["extract_words.cc"],
+    hdrs = ["extract_words.h"],
+    deps = [
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/strings",
     ],
 )
