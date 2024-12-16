@@ -5,7 +5,7 @@ module(name = "uchen-core", version = "0.1", compatibility_level = 1)
 
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
 
-bazel_dep(name = "googletest", version = "1.14.0")
+bazel_dep(name = "googletest", version = "1.15.2")
 git_override(
     module_name = "googletest",
     remote = "https://github.com/google/googletest.git",
